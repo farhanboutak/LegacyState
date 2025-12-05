@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile Pawn",
+            "type": "shell",
+            "command": "${workspaceFolder}\\pawno\\pawncc.exe",
+            "args": [
+                "${file}",
+                "-i${workspaceFolder}\\pawno\\include",
+                "-i${workspaceFolder}\\include",
+                "-o${workspaceFolder}\\gamemodes\\${fileBasenameNoExtension}.amx"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

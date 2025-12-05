@@ -1,0 +1,30 @@
+[11:42:35] [WARNING] mysql_connect: no password specified
+[12:53:03] [WARNING] mysql_connect: no password specified
+[14:44:45] [WARNING] mysql_connect: no password specified
+[15:00:28] [WARNING] mysql_connect: no password specified
+[15:08:05] [WARNING] mysql_connect: no password specified
+[15:27:54] [WARNING] mysql_connect: no password specified
+[15:28:43] [ERROR] error #1146 while executing query "SELECT password FROM users WHERE name='farhanboutak' LIMIT 1": Table 'samp.users' doesn't exist
+[15:28:49] [ERROR] error #1146 while executing query "SELECT id FROM users WHERE name='farhanboutak' LIMIT 1": Table 'samp.users' doesn't exist
+[15:28:54] [ERROR] error #1146 while executing query "SELECT password FROM users WHERE name='farhanboutak' LIMIT 1": Table 'samp.users' doesn't exist
+[15:28:55] [ERROR] error #1146 while executing query "SELECT password FROM users WHERE name='farhanboutak' LIMIT 1": Table 'samp.users' doesn't exist
+[15:31:39] [WARNING] mysql_connect: no password specified
+[15:38:38] [WARNING] mysql_connect: no password specified
+[15:52:52] [WARNING] mysql_connect: no password specified
+[16:00:46] [WARNING] mysql_connect: no password specified
+[16:03:26] [WARNING] mysql_connect: no password specified
+[16:03:26] [WARNING] mysql_connect: no password specified
+[16:06:46] [WARNING] mysql_connect: no password specified
+[16:14:18] [WARNING] mysql_connect: no password specified
+[16:17:06] [WARNING] mysql_connect: no password specified
+[16:28:41] [WARNING] mysql_connect: no password specified
+[16:32:45] [WARNING] mysql_connect: no password specified
+[16:35:19] [WARNING] mysql_connect: no password specified
+[16:38:34] [WARNING] mysql_connect: no password specified
+[16:45:20] [WARNING] mysql_connect: no password specified
+[16:48:08] [WARNING] mysql_connect: no password specified
+[16:52:54] [WARNING] mysql_connect: no password specified
+[16:55:33] [WARNING] mysql_connect: no password specified
+[16:59:02] [WARNING] mysql_connect: no password specified
+[17:05:38] [WARNING] mysql_connect: no password specified
+[17:06:50] [WARNING] mysql_connect: no password specified
