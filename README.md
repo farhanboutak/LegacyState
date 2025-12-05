@@ -1,8 +1,8 @@
 CHANGELOG – Legacy State Roleplay
 Versi: BETA 0.1 (05 Desember 2025)
 #Fitur Baru & Perbaikan Sistem#
-*MASIH ADA BEBERAPA BUG*
-~Bugs karakter 
+--*MASIH ADA BEBERAPA BUG*
+--~Bugs karakter 
 ~
 
 #- Sistem Character Selection (Multi-Character)
@@ -15,5 +15,6 @@ Versi: BETA 0.1 (05 Desember 2025)
 - Menghilangkan bug “blank screen / stuck di langit” setelah memilih karakter.
 - TogglePlayerSpectating dinonaktifkan secara tepat setelah karakter terpilih.
 - OnPlayerRequestClass & OnPlayerRequestSpawn diblokir hingga karakter dipilih (anti-bypass).
+
 
 
