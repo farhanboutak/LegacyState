@@ -8,6 +8,8 @@
 #define DIALOG_PAY         5003
 #define DIALOG_CHARLIST    5004
 #define DIALOG_CHARCREATE  5005
+#define DIALOG_CHAR_ACTION 5006
+#define DIALOG_CHAR_DELETE 5007
 
 #define COLOR_WHITE        0xFFFFFFFF
 #define COLOR_RED          0xFF0000FF
@@ -198,12 +200,50 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         }
         else
         {
-            // Klik karakter yang ada → langsung masuk!
+            // Klik karakter yang ada → tampilkan opsi aksi (Mainkan/Hapus)
             pSelectedChar[playerid] = listitem;
+            new showname[24], dialogstr[128];
+            format(showname, sizeof(showname), "%s", pCharName[playerid][listitem]);
+            ReplaceUnderscore(showname);
+            format(dialogstr, sizeof(dialogstr), "\nMainkan\nHapus", showname);
+            ShowPlayerDialog(playerid, DIALOG_CHAR_ACTION, DIALOG_STYLE_LIST, "Aksi Karakter", dialogstr, "Pilih", "Kembali");
+        }
+        return 1;
+    }
+
+    if(dialogid == DIALOG_CHAR_ACTION)
+    {
+        if(!response) return LoadPlayerCharacters(playerid);
+
+        if(listitem == 0) // Mainkan
+        {
             new query[128];
-            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin FROM characters WHERE id = %d", pCharID[playerid][listitem]);
+            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
             mysql_tquery(sqldb, query, "OnCharacterSelected", "i", playerid);
         }
+        else if(listitem == 1) // Hapus
+        {
+            new showname[24], dialogstr[128];
+            format(showname, sizeof(showname), "%s", pCharName[playerid][pSelectedChar[playerid]]);
+            ReplaceUnderscore(showname);
+            format(dialogstr, sizeof(dialogstr), "Yakin ingin menghapus %s? Aksi ini tidak bisa dibatalkan!", showname);
+            ShowPlayerDialog(playerid, DIALOG_CHAR_DELETE, DIALOG_STYLE_MSGBOX, "Konfirmasi Hapus Karakter", dialogstr, "Ya", "Tidak");
+        }
+        return 1;
+    }
+
+    if(dialogid == DIALOG_CHAR_DELETE)
+    {
+        if(!response) return LoadPlayerCharacters(playerid);
+
+        // Hapus karakter dari database
+        new query[128];
+        mysql_format(sqldb, query, sizeof(query), "DELETE FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
+        mysql_tquery(sqldb, query);
+
+        SendClientMessage(playerid, COLOR_RED, "Karakter berhasil dihapus!");
+        pSelectedChar[playerid] = -1;
+        LoadPlayerCharacters(playerid);
         return 1;
     }
 
