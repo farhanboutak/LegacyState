@@ -247,8 +247,7 @@ forward OnCharactersLoaded(playerid);
 public OnCharactersLoaded(playerid)
 {
     new rows = cache_num_rows();
-    new string[700];
-
+    new string[700] = "{FFFFFF}=== PILIH KARAKTER ===\n\n";
     new char_count = 0;
 
     // Reset array
@@ -281,7 +280,7 @@ public OnCharactersLoaded(playerid)
         format(string, sizeof(string), "%s{FFFF00}[Slot %d] {00FF00}Buat Karakter Baru\n", string, char_count+1);
     }
 
-    ShowPlayerDialog(playerid, DIALOG_CHARLIST, DIALOG_STYLE_LIST, "{FFFFFF}=== PILIH KARAKTER ===", string, "Pilih", "Keluar");
+    ShowPlayerDialog(playerid, DIALOG_CHARLIST, DIALOG_STYLE_LIST, "Pilih Karakter", string, "Pilih", "Keluar");
 }
 
 forward OnCharacterCreated(playerid);
