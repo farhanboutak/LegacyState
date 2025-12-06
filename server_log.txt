@@ -4573,3 +4573,412 @@ v0.3.DL-R1, (C)2005-2018 SA-MP Team
 [20:36:10] ==================================
 
 [20:36:10] Number of vehicle models: 4
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.DL-R1, (C)2005-2018 SA-MP Team
+
+[21:03:47] 
+[21:03:47] Server Plugins
+[21:03:47] --------------
+[21:03:47]  Loading plugin: sscanf.DLL
+[21:03:47] 
+
+[21:03:47]  ===============================
+
+[21:03:47]       sscanf plugin loaded.     
+
+[21:03:47]          Version:  2.8.3        
+
+[21:03:47]   (c) 2018 Alex "Y_Less" Cole  
+
+[21:03:47]  ===============================
+
+[21:03:47]   Loaded.
+[21:03:47]  Loading plugin: mysql.dll
+[21:03:47]  >> plugin.mysql: R41-4 successfully loaded.
+[21:03:47]   Loaded.
+[21:03:47]  Loading plugin: Whirlpool.dll
+[21:03:47]  
+[21:03:47]  ==================
+[21:03:47]  
+[21:03:47]   Whirlpool loaded
+[21:03:47]  
+[21:03:47]  ==================
+[21:03:47]  
+[21:03:47]   Loaded.
+[21:03:47]  Loaded 3 plugins.
+
+[21:03:47] [artwork:crc] lvpdpc2.dff CRC = 0xFBD1EA7C
+[21:03:47] [artwork:crc] lvpdpc2.txd CRC = 0xDC92731E
+[21:03:47] [artwork:crc] lapdpd2.dff CRC = 0xA558D422
+[21:03:47] [artwork:crc] lapdpd2.txd CRC = 0xA442E2DA
+[21:03:47] [artwork:crc] wallzzz.dff CRC = 0x4BC6EDFF
+[21:03:47] [artwork:crc] wallzzz.txd CRC = 0x235E3EEB
+[21:03:48] 
+[21:03:48] Filterscripts
+[21:03:48] ---------------
+[21:03:48]   Loading filterscript 'gl_actions.amx'...
+[21:03:48] AMX (45685680) loaded
+[21:03:48]   Loading filterscript 'gl_realtime.amx'...
+[21:03:48] AMX (45518512) loaded
+[21:03:48]   Loading filterscript 'gl_property.amx'...
+[21:03:48] AMX (45475904) loaded
+[21:03:48] 
+-----------------------------------
+[21:03:48] Grand Larceny Property Filterscript		
+[21:03:48] -----------------------------------
+
+[21:03:48]   Loading filterscript 'gl_mapicon.amx'...
+[21:03:48] AMX (45441496) loaded
+[21:03:48]   Loading filterscript 'ls_elevator.amx'...
+[21:03:48] AMX (45398888) loaded
+[21:03:48]   Loading filterscript 'attachments.amx'...
+[21:03:48] AMX (47287872) loaded
+[21:03:48]   Loading filterscript 'test_cmds.amx'...
+[21:03:48] AMX (47287984) loaded
+[21:03:48]   Loading filterscript 'skinchanger.amx'...
+[21:03:48] AMX (47288096) loaded
+[21:03:48] 
+--Admin Player Skin Changer Loaded
+
+[21:03:48]   Loading filterscript 'vspawner.amx'...
+[21:03:48] AMX (47288208) loaded
+[21:03:48] 
+--Admin Vehicle Spawner Loaded
+
+[21:03:48]   Loading filterscript 'ls_mall.amx'...
+[21:03:48] AMX (47288320) loaded
+[21:03:48]   Loading filterscript 'ls_beachside.amx'...
+[21:03:48] AMX (47288432) loaded
+[21:03:48] 
+
+[21:03:48]   |---------------------------------------------------
+[21:03:48]   |--- LS BeachSide Filterscript
+[21:03:48]   |--  Script v1.03
+[21:03:48]   |--  19th April 2015
+[21:03:48]   |---------------------------------------------------
+[21:03:48]   |--  LS BeachSide Building Elevator created
+[21:03:48]   |---------------------------------------------------
+[21:03:48]   Loading filterscript 'npc_record.amx'...
+[21:03:48] AMX (47288720) loaded
+[21:03:48]   Loading filterscript 'stunt_island.amx'...
+[21:03:48] AMX (47288832) loaded
+[21:03:48] 
+
+[21:03:48]   |---------------------------------------------------
+[21:03:48]   |--- Stunt Island Filterscript by Matite and Kye
+[21:03:48]   |--  Script v1.02
+[21:03:48]   |--  13th February 2015
+[21:03:48]   |---------------------------------------------------
+[21:03:48]   Loading filterscript 'stunt_island2.amx'...
+[21:03:48] AMX (48035064) loaded
+[21:03:48] 
+
+[21:03:48]   |---------------------------------------------------
+[21:03:48]   |--- Stunt Island Filterscript 2 by Matite and Kye
+[21:03:48]   |--  Script v1.00
+[21:03:48]   |--  Sept 2017
+[21:03:48]   |---------------------------------------------------
+[21:03:48]   Loading filterscript 'ospawner.amx'...
+[21:03:48] AMX (48038160) loaded
+[21:03:48] 
+--Admin Vehicle Spawner Loaded
+
+[21:03:48]   Loaded 15 filterscripts.
+
+[21:03:48] AMX (45528344) loaded
+[21:03:48] [MySQL] Koneksi Berhasil!
+[21:03:48] Reading File: blank
+[21:03:48] Reading File: properties/houses.txt
+[21:03:48] Reading File: properties/businesses.txt
+[21:03:48] Reading File: properties/banks.txt
+[21:03:48] Reading File: properties/police.txt
+[21:03:48] 
+==================================
+[21:03:48]  LSRP BETA 0.3 - penambahan baru    
+[21:03:48] ==================================
+
+[21:03:48] Number of vehicle models: 4
+[21:04:07] [connection] incoming connection: 127.0.0.1:54381 id: 0
+[21:04:07] [join] farhanboutak has joined the server (0:127.0.0.1)
+[21:04:39] [part] lfosfosdf_dadsa has left the server (0:1)
+[21:04:54] [connection] incoming connection: 127.0.0.1:64929 id: 0
+[21:04:54] [join] farhanboutak has joined the server (0:127.0.0.1)
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.DL-R1, (C)2005-2018 SA-MP Team
+
+[21:21:03] 
+[21:21:03] Server Plugins
+[21:21:03] --------------
+[21:21:03]  Loading plugin: sscanf.DLL
+[21:21:03] 
+
+[21:21:03]  ===============================
+
+[21:21:03]       sscanf plugin loaded.     
+
+[21:21:03]          Version:  2.8.3        
+
+[21:21:03]   (c) 2018 Alex "Y_Less" Cole  
+
+[21:21:03]  ===============================
+
+[21:21:03]   Loaded.
+[21:21:03]  Loading plugin: mysql.dll
+[21:21:04]  >> plugin.mysql: R41-4 successfully loaded.
+[21:21:04]   Loaded.
+[21:21:04]  Loading plugin: Whirlpool.dll
+[21:21:04]  
+[21:21:04]  ==================
+[21:21:04]  
+[21:21:04]   Whirlpool loaded
+[21:21:04]  
+[21:21:04]  ==================
+[21:21:04]  
+[21:21:04]   Loaded.
+[21:21:04]  Loaded 3 plugins.
+
+[21:21:04] [artwork:crc] lvpdpc2.dff CRC = 0xFBD1EA7C
+[21:21:04] [artwork:crc] lvpdpc2.txd CRC = 0xDC92731E
+[21:21:04] [artwork:crc] lapdpd2.dff CRC = 0xA558D422
+[21:21:04] [artwork:crc] lapdpd2.txd CRC = 0xA442E2DA
+[21:21:04] [artwork:crc] wallzzz.dff CRC = 0x4BC6EDFF
+[21:21:04] [artwork:crc] wallzzz.txd CRC = 0x235E3EEB
+[21:21:04] 
+[21:21:04] Filterscripts
+[21:21:04] ---------------
+[21:21:04]   Loading filterscript 'gl_actions.amx'...
+[21:21:04] AMX (44506032) loaded
+[21:21:04]   Loading filterscript 'gl_realtime.amx'...
+[21:21:04] AMX (44338864) loaded
+[21:21:04]   Loading filterscript 'gl_property.amx'...
+[21:21:04] AMX (44296256) loaded
+[21:21:04] 
+-----------------------------------
+[21:21:04] Grand Larceny Property Filterscript		
+[21:21:04] -----------------------------------
+
+[21:21:04]   Loading filterscript 'gl_mapicon.amx'...
+[21:21:04] AMX (44261848) loaded
+[21:21:04]   Loading filterscript 'ls_elevator.amx'...
+[21:21:04] AMX (44219240) loaded
+[21:21:04]   Loading filterscript 'attachments.amx'...
+[21:21:04] AMX (46108224) loaded
+[21:21:04]   Loading filterscript 'test_cmds.amx'...
+[21:21:04] AMX (46108336) loaded
+[21:21:04]   Loading filterscript 'skinchanger.amx'...
+[21:21:04] AMX (46108448) loaded
+[21:21:04] 
+--Admin Player Skin Changer Loaded
+
+[21:21:04]   Loading filterscript 'vspawner.amx'...
+[21:21:04] AMX (46108560) loaded
+[21:21:04] 
+--Admin Vehicle Spawner Loaded
+
+[21:21:04]   Loading filterscript 'ls_mall.amx'...
+[21:21:04] AMX (46108672) loaded
+[21:21:04]   Loading filterscript 'ls_beachside.amx'...
+[21:21:04] AMX (46108784) loaded
+[21:21:04] 
+
+[21:21:04]   |---------------------------------------------------
+[21:21:04]   |--- LS BeachSide Filterscript
+[21:21:04]   |--  Script v1.03
+[21:21:04]   |--  19th April 2015
+[21:21:04]   |---------------------------------------------------
+[21:21:04]   |--  LS BeachSide Building Elevator created
+[21:21:04]   |---------------------------------------------------
+[21:21:04]   Loading filterscript 'npc_record.amx'...
+[21:21:04] AMX (46109072) loaded
+[21:21:04]   Loading filterscript 'stunt_island.amx'...
+[21:21:04] AMX (46109184) loaded
+[21:21:04] 
+
+[21:21:04]   |---------------------------------------------------
+[21:21:04]   |--- Stunt Island Filterscript by Matite and Kye
+[21:21:04]   |--  Script v1.02
+[21:21:04]   |--  13th February 2015
+[21:21:04]   |---------------------------------------------------
+[21:21:04]   Loading filterscript 'stunt_island2.amx'...
+[21:21:04] AMX (46855416) loaded
+[21:21:04] 
+
+[21:21:04]   |---------------------------------------------------
+[21:21:04]   |--- Stunt Island Filterscript 2 by Matite and Kye
+[21:21:04]   |--  Script v1.00
+[21:21:04]   |--  Sept 2017
+[21:21:04]   |---------------------------------------------------
+[21:21:04]   Loading filterscript 'ospawner.amx'...
+[21:21:04] AMX (46858512) loaded
+[21:21:04] 
+--Admin Vehicle Spawner Loaded
+
+[21:21:04]   Loaded 15 filterscripts.
+
+[21:21:04] AMX (44348696) loaded
+[21:21:04] [MySQL] Koneksi Berhasil!
+[21:21:04] Reading File: blank
+[21:21:04] Reading File: properties/houses.txt
+[21:21:04] Reading File: properties/businesses.txt
+[21:21:04] Reading File: properties/banks.txt
+[21:21:04] Reading File: properties/police.txt
+[21:21:04] 
+==================================
+[21:21:04]  LSRP BETA 0.3 - penambahan baru    
+[21:21:04] ==================================
+
+[21:21:04] Number of vehicle models: 4
+[21:21:17] [connection] incoming connection: 127.0.0.1:56361 id: 0
+[21:21:17] [join] farhanboutak has joined the server (0:127.0.0.1)
+[21:21:49] [part] farhanboutak has left the server (0:1)
+[21:22:29] [connection] incoming connection: 127.0.0.1:59383 id: 0
+[21:22:30] [join] farhanboutakp has joined the server (0:127.0.0.1)
+[21:22:44] [part] farhanboutakp has left the server (0:1)
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.DL-R1, (C)2005-2018 SA-MP Team
+
+[21:25:54] 
+[21:25:54] Server Plugins
+[21:25:54] --------------
+[21:25:54]  Loading plugin: sscanf.DLL
+[21:25:54] 
+
+[21:25:54]  ===============================
+
+[21:25:54]       sscanf plugin loaded.     
+
+[21:25:54]          Version:  2.8.3        
+
+[21:25:54]   (c) 2018 Alex "Y_Less" Cole  
+
+[21:25:54]  ===============================
+
+[21:25:54]   Loaded.
+[21:25:54]  Loading plugin: mysql.dll
+[21:25:54]  >> plugin.mysql: R41-4 successfully loaded.
+[21:25:54]   Loaded.
+[21:25:54]  Loading plugin: Whirlpool.dll
+[21:25:54]  
+[21:25:54]  ==================
+[21:25:54]  
+[21:25:54]   Whirlpool loaded
+[21:25:54]  
+[21:25:54]  ==================
+[21:25:54]  
+[21:25:54]   Loaded.
+[21:25:54]  Loaded 3 plugins.
+
+[21:25:54] [artwork:crc] lvpdpc2.dff CRC = 0xFBD1EA7C
+[21:25:54] [artwork:crc] lvpdpc2.txd CRC = 0xDC92731E
+[21:25:54] [artwork:crc] lapdpd2.dff CRC = 0xA558D422
+[21:25:54] [artwork:crc] lapdpd2.txd CRC = 0xA442E2DA
+[21:25:54] [artwork:crc] wallzzz.dff CRC = 0x4BC6EDFF
+[21:25:54] [artwork:crc] wallzzz.txd CRC = 0x235E3EEB
+[21:25:54] 
+[21:25:54] Filterscripts
+[21:25:54] ---------------
+[21:25:54]   Loading filterscript 'gl_actions.amx'...
+[21:25:54] AMX (43588528) loaded
+[21:25:54]   Loading filterscript 'gl_realtime.amx'...
+[21:25:54] AMX (43421360) loaded
+[21:25:54]   Loading filterscript 'gl_property.amx'...
+[21:25:54] AMX (43378752) loaded
+[21:25:54] 
+-----------------------------------
+[21:25:54] Grand Larceny Property Filterscript		
+[21:25:54] -----------------------------------
+
+[21:25:54]   Loading filterscript 'gl_mapicon.amx'...
+[21:25:54] AMX (43344344) loaded
+[21:25:54]   Loading filterscript 'ls_elevator.amx'...
+[21:25:54] AMX (43301736) loaded
+[21:25:54]   Loading filterscript 'attachments.amx'...
+[21:25:54] AMX (45190720) loaded
+[21:25:54]   Loading filterscript 'test_cmds.amx'...
+[21:25:54] AMX (45190832) loaded
+[21:25:54]   Loading filterscript 'skinchanger.amx'...
+[21:25:54] AMX (45190944) loaded
+[21:25:54] 
+--Admin Player Skin Changer Loaded
+
+[21:25:54]   Loading filterscript 'vspawner.amx'...
+[21:25:54] AMX (45191056) loaded
+[21:25:54] 
+--Admin Vehicle Spawner Loaded
+
+[21:25:54]   Loading filterscript 'ls_mall.amx'...
+[21:25:54] AMX (45191168) loaded
+[21:25:54]   Loading filterscript 'ls_beachside.amx'...
+[21:25:54] AMX (45191280) loaded
+[21:25:54] 
+
+[21:25:54]   |---------------------------------------------------
+[21:25:54]   |--- LS BeachSide Filterscript
+[21:25:54]   |--  Script v1.03
+[21:25:54]   |--  19th April 2015
+[21:25:54]   |---------------------------------------------------
+[21:25:54]   |--  LS BeachSide Building Elevator created
+[21:25:54]   |---------------------------------------------------
+[21:25:54]   Loading filterscript 'npc_record.amx'...
+[21:25:54] AMX (45191568) loaded
+[21:25:54]   Loading filterscript 'stunt_island.amx'...
+[21:25:54] AMX (45191680) loaded
+[21:25:54] 
+
+[21:25:54]   |---------------------------------------------------
+[21:25:54]   |--- Stunt Island Filterscript by Matite and Kye
+[21:25:54]   |--  Script v1.02
+[21:25:54]   |--  13th February 2015
+[21:25:54]   |---------------------------------------------------
+[21:25:54]   Loading filterscript 'stunt_island2.amx'...
+[21:25:54] AMX (45937912) loaded
+[21:25:54] 
+
+[21:25:54]   |---------------------------------------------------
+[21:25:54]   |--- Stunt Island Filterscript 2 by Matite and Kye
+[21:25:54]   |--  Script v1.00
+[21:25:54]   |--  Sept 2017
+[21:25:54]   |---------------------------------------------------
+[21:25:54]   Loading filterscript 'ospawner.amx'...
+[21:25:54] AMX (45941008) loaded
+[21:25:54] 
+--Admin Vehicle Spawner Loaded
+
+[21:25:54]   Loaded 15 filterscripts.
+
+[21:25:54] AMX (43431192) loaded
+[21:25:54] [MySQL] Koneksi Berhasil!
+[21:25:54] Reading File: blank
+[21:25:54] Reading File: properties/houses.txt
+[21:25:54] Reading File: properties/businesses.txt
+[21:25:54] Reading File: properties/banks.txt
+[21:25:54] Reading File: properties/police.txt
+[21:25:54] 
+==================================
+[21:25:54]  LSRP BETA 0.3 - penambahan baru    
+[21:25:54] ==================================
+
+[21:25:54] Number of vehicle models: 4
+[21:26:07] [connection] incoming connection: 127.0.0.1:54880 id: 0
+[21:26:07] [join] farhanboutakp has joined the server (0:127.0.0.1)
+[21:26:48] [part] laudza_a has left the server (0:1)
+[21:27:02] [connection] incoming connection: 127.0.0.1:61754 id: 0
+[21:27:02] [join] farhanboutakp has joined the server (0:127.0.0.1)

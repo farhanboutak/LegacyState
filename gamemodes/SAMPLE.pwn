@@ -10,6 +10,9 @@
 #define DIALOG_CHARCREATE  5005
 #define DIALOG_CHAR_ACTION 5006
 #define DIALOG_CHAR_DELETE 5007
+#define DIALOG_GENDER      5008
+#define DIALOG_BIRTHDATE   5009
+#define DIALOG_SKIN        5010
 
 #define COLOR_WHITE        0xFFFFFFFF
 #define COLOR_RED          0xFF0000FF
@@ -21,6 +24,7 @@
 #include <sscanf2>
 #include <zcmd>
 #include <whirlpool>
+#include <TimestampToDate>
 
 #define SQL_HOST    "localhost"
 #define SQL_USER    "root"
@@ -43,12 +47,22 @@ new pCharName[MAX_PLAYERS][MAX_CHARS][24];
 new pCharSkin[MAX_PLAYERS][MAX_CHARS];
 new pSelectedChar[MAX_PLAYERS] = {-1, ...};
 
+new tempCharName[MAX_PLAYERS][24];
+new tempGender[MAX_PLAYERS];
+new tempBirthdate[MAX_PLAYERS][11];
+
 new RandomCars[] = {
     400,401,402,404,405,409,411,412,415,418,419,420,421,422,424,426,429,434,436,439,
     442,445,451,458,466,467,474,475,477,478,479,480,489,491,492,496,500,506,507,516,
     517,518,527,529,533,540,541,542,545,546,547,549,550,551,554,555,558,559,560,561,
     562,565,567,575,576,579,580,585,587,589,600,602,603
 };
+
+static const MaleSkins[10] = {1, 2, 7, 14, 15, 16, 17, 18, 19, 20};
+static const FemaleSkins[10] = {9, 10, 11, 12, 13, 31, 38, 39, 40, 41};
+
+static const WeekDayName[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+static const MonthName[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 // === FUNGSI GANTI UNDERSCORE KE SPASI ===
 stock ReplaceUnderscore(string[])
@@ -57,6 +71,10 @@ stock ReplaceUnderscore(string[])
     {
         if(string[i] == '_') string[i] = ' ';
     }
+}
+
+stock GetWeekDay(timestamp) {
+    return ((timestamp / 86400) % 7 + 4) % 7; // 0=Sun, 1=Mon, ..., 6=Sat
 }
 
 main() {
@@ -73,6 +91,13 @@ public OnGameModeInit()
     sqldb = mysql_connect(SQL_HOST, SQL_USER, SQL_PASS, SQL_DB);
     if(mysql_errno(sqldb)) print("[MySQL] Koneksi GAGAL!");
     else print("[MySQL] Koneksi Berhasil!");
+
+    // Create tables if not exist
+    mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS users (name VARCHAR(24) PRIMARY KEY, password VARCHAR(129))");
+    mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS characters (id INT AUTO_INCREMENT PRIMARY KEY, owner VARCHAR(24), charname VARCHAR(24), skin INT, money INT, lastlogin INT)");
+
+    // Add birthdate column if not exists
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS birthdate VARCHAR(10) NOT NULL DEFAULT ''");
 
     UI[0] = TextDrawCreate(267.0, 5.0, "Legacy");
     TextDrawFont(UI[0], 0); TextDrawLetterSize(UI[0], 0.404166, 1.450000);
@@ -97,6 +122,9 @@ public OnPlayerConnect(playerid)
     pLogged{playerid} = false;
     pLoginAttempts[playerid] = 0;
     pSelectedChar[playerid] = -1;
+    format(tempCharName[playerid], 24, "");
+    tempGender[playerid] = 0;
+    format(tempBirthdate[playerid], 11, "");
 
     for(new i; i < 3; i++) TextDrawShowForPlayer(playerid, UI[i]);
 
@@ -254,11 +282,69 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             return ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Error", 
                 "{FF0000}Nama harus pakai underscore dan 5-20 karakter!\nContoh: John_Doe", "Buat", "Kembali");
 
-        new accname[MAX_PLAYER_NAME], query[256];
+        format(tempCharName[playerid], 24, "%s", inputtext);
+        ShowPlayerDialog(playerid, DIALOG_GENDER, DIALOG_STYLE_LIST, "Gender", "1. Male/Laki-Laki\n2. Female/Perempuan", "Pilih", "Batal");
+        return 1;
+    }
+
+    if(dialogid == DIALOG_GENDER)
+    {
+        if(!response)
+        {
+            ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Buat Karakter Baru",
+                "{FFFFFF}Masukkan Nama Karakter (Format: Firstname_Lastname)\nContoh: Michael_Smith", "Buat", "Kembali");
+            return 1;
+        }
+        tempGender[playerid] = listitem;
+        ShowPlayerDialog(playerid, DIALOG_BIRTHDATE, DIALOG_STYLE_INPUT, "Tanggal Lahir", "Masukkan tanggal lahir (dd/mm/yyyy)\nContoh: 19/10/2000", "Lanjut", "Batal");
+        return 1;
+    }
+
+    if(dialogid == DIALOG_BIRTHDATE)
+    {
+        if(!response)
+        {
+            ShowPlayerDialog(playerid, DIALOG_GENDER, DIALOG_STYLE_LIST, "Gender", "1. Male/Laki-Laki\n2. Female/Perempuan", "Pilih", "Batal");
+            return 1;
+        }
+        new day, month, year;
+        if(sscanf(inputtext, "p</>iii", day, month, year) || day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2025)
+        {
+            return ShowPlayerDialog(playerid, DIALOG_BIRTHDATE, DIALOG_STYLE_INPUT, "Error", "{FF0000}Format salah! Masukkan dd/mm/yyyy\nContoh: 19/10/2000", "Lanjut", "Batal");
+        }
+        format(tempBirthdate[playerid], 11, "%02d/%02d/%d", day, month, year);
+
+        new skinlist[300], str[20];
+        for(new i = 0; i < 10; i++)
+        {
+            new sid = (tempGender[playerid] == 0) ? MaleSkins[i] : FemaleSkins[i];
+            format(str, sizeof(str), "%d\n", sid);
+            strcat(skinlist, str);
+        }
+        ShowPlayerDialog(playerid, DIALOG_SKIN, DIALOG_STYLE_LIST, "CHOOSE YOUR SKIN", skinlist, "Pilih", "Batal");
+        return 1;
+    }
+
+    if(dialogid == DIALOG_SKIN)
+    {
+        if(!response)
+        {
+            ShowPlayerDialog(playerid, DIALOG_BIRTHDATE, DIALOG_STYLE_INPUT, "Tanggal Lahir", "Masukkan tanggal lahir (dd/mm/yyyy)\nContoh: 19/10/2000", "Lanjut", "Batal");
+            return 1;
+        }
+        new skinid = (tempGender[playerid] == 0) ? MaleSkins[listitem] : FemaleSkins[listitem];
+        new accname[MAX_PLAYER_NAME], query[300];
         GetPlayerName(playerid, accname, sizeof(accname));
         mysql_format(sqldb, query, sizeof(query),
-            "INSERT INTO characters (owner, charname, skin, money) VALUES ('%e', '%e', 7, 5000)", accname, inputtext);
+            "INSERT INTO characters (owner, charname, skin, money, lastlogin, birthdate) VALUES ('%e', '%e', %d, 5000, 0, '%s')", accname, tempCharName[playerid], skinid, tempBirthdate[playerid]);
         mysql_tquery(sqldb, query, "OnCharacterCreated", "i", playerid);
+
+        new msg[128];
+        format(msg, sizeof(msg), "[SERVER]: Registrasi Berhasil! Terima kasih telah bergabung ke dalam server!");
+        SendClientMessage(playerid, COLOR_GREEN, msg);
+        format(msg, sizeof(msg), "Tanggal Lahir : %s", tempBirthdate[playerid]);
+        SendClientMessage(playerid, COLOR_WHITE, msg);
+
         return 1;
     }
 
@@ -279,7 +365,7 @@ public LoadPlayerCharacters(playerid)
     }
 
     mysql_format(sqldb, query, sizeof(query),
-        "SELECT id, charname, skin FROM characters WHERE owner = '%e' ORDER BY id ASC LIMIT %d", accname, MAX_CHARS);
+        "SELECT id, charname, skin, lastlogin, birthdate FROM characters WHERE owner = '%e' ORDER BY id ASC LIMIT %d", accname, MAX_CHARS);
     mysql_tquery(sqldb, query, "OnCharactersLoaded", "i", playerid);
 }
 
@@ -298,20 +384,33 @@ public OnCharactersLoaded(playerid)
     for(new i = 0; i < rows && i < MAX_CHARS; i++)
     {
         new id, skin;
-        new cname[24], showname[24];
-
+        new cname[24], showname[24], birthstr[11];
+        new lastlogin;
         cache_get_value_name_int(i, "id", id);
         cache_get_value_name(i, "charname", cname, 24);
         cache_get_value_name_int(i, "skin", skin);
+        cache_get_value_name_int(i, "lastlogin", lastlogin);
+        cache_get_value_name(i, "birthdate", birthstr, 11);
 
         pCharID[playerid][i] = id;
         format(pCharName[playerid][i], 24, "%s", cname);
         pCharSkin[playerid][i] = skin;
 
+        new laststr[32];
+        if(lastlogin == 0) {
+            format(laststr, sizeof(laststr), "Never");
+        } else {
+            new year, month, day, hour, minute, second;
+            TimestampToDate(lastlogin, year, month, day, hour, minute, second, 7, 0); // 7 untuk GMT+7 (Indonesia), ganti 0 jika UTC
+            new weekday = GetWeekDay(lastlogin);
+            format(laststr, sizeof(laststr), "%s %02d %s %d, %02d:%02d:%02d",
+                WeekDayName[weekday], day, MonthName[month-1], year, hour, minute, second);
+        }
+
         format(showname, sizeof(showname), "%s", cname);
         ReplaceUnderscore(showname);
 
-        format(string, sizeof(string), "%s{00FF00}[Slot %d] {FFFFFF}%s {AFAFAF}(Skin: %d)\n", string, i+1, showname, skin);
+        format(string, sizeof(string), "%s{00FF00}[Slot %d] {FFFFFF}%s {AFAFAF}(Skin: %d) - Last Login: %s - Birth: %s\n", string, i+1, showname, skin, laststr, birthstr);
         char_count++;
     }
 
@@ -343,6 +442,11 @@ public OnCharacterSelected(playerid)
     new money, skin;
     cache_get_value_name_int(0, "money", money);
     cache_get_value_name_int(0, "skin", skin);
+
+    new now = gettime();
+    new upquery[128];
+    mysql_format(sqldb, upquery, sizeof(upquery), "UPDATE characters SET lastlogin = %d WHERE id = %d", now, pCharID[playerid][pSelectedChar[playerid]]);
+    mysql_tquery(sqldb, upquery);
 
     pMoney[playerid] = money;
     SetPlayerSkin(playerid, skin);
