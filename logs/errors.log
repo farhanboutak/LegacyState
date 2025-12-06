@@ -1,0 +1,1 @@
+[00:09:05] [plugins/mysql] error #1062 while executing query "ALTER TABLE characters ADD UNIQUE IF NOT EXISTS unique_charname (charname)": Duplicate entry 'asdsadsa_asdsadsad' for key 'unique_charname'

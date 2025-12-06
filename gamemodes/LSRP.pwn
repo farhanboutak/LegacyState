@@ -13,6 +13,7 @@
 #define DIALOG_GENDER      5008
 #define DIALOG_BIRTHDATE   5009
 #define DIALOG_SKIN        5010
+#define DIALOG_ARRIVAL     5011
 
 #define COLOR_WHITE        0xFFFFFFFF
 #define COLOR_RED          0xFF0000FF
@@ -34,6 +35,8 @@
 
 new MySQL:sqldb;
 
+new tempProposedName[MAX_PLAYERS][24]; // untuk menyimpan nama yang sedang dicek
+
 new bool:pLogged[MAX_PLAYERS char];
 new pLoginAttempts[MAX_PLAYERS];
 new Float:tpX[MAX_PLAYERS], Float:tpY[MAX_PLAYERS], Float:tpZ[MAX_PLAYERS];
@@ -51,6 +54,8 @@ new tempCharName[MAX_PLAYERS][24];
 new tempGender[MAX_PLAYERS];
 new tempBirthdate[MAX_PLAYERS][11];
 new tempSkinIndex[MAX_PLAYERS];
+new tempArrivalIndex[MAX_PLAYERS];
+new tempSkin[MAX_PLAYERS];
 new bool:isCreating[MAX_PLAYERS];
 
 new RandomCars[] = {
@@ -62,6 +67,18 @@ new RandomCars[] = {
 
 static const MaleSkins[10] = {1, 2, 7, 14, 15, 16, 17, 18, 19, 20};
 static const FemaleSkins[10] = {9, 10, 11, 12, 13, 31, 38, 39, 40, 41};
+
+static const ArrivalNames[3][] = {
+    "Los Santos Airport",
+    "Los Santos Market Station",
+    "Los Santos Unity Station"
+};
+
+static const Float:ArrivalCoords[3][4] = {
+    {1682.0001, -2330.7502, 13.5469, 358.5358},
+    {821.4300, -1341.1800, 12.3200, 90.0000},
+    {1759.5500, -1945.7900, 13.5600, 270.0000}
+};
 
 static const WeekDayName[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 static const MonthName[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -101,6 +118,9 @@ public OnGameModeInit()
     // Add birthdate column if not exists
     mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS birthdate VARCHAR(10) NOT NULL DEFAULT ''");
 
+    // Membuat charname unik di database (mencegah race condition)
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD UNIQUE IF NOT EXISTS unique_charname (charname)");
+
     UI[0] = TextDrawCreate(267.0, 5.0, "Legacy");
     TextDrawFont(UI[0], 0); TextDrawLetterSize(UI[0], 0.404166, 1.450000);
     TextDrawColor(UI[0], -1); TextDrawSetOutline(UI[0], 1); TextDrawSetProportional(UI[0], 1);
@@ -128,6 +148,8 @@ public OnPlayerConnect(playerid)
     tempGender[playerid] = 0;
     format(tempBirthdate[playerid], 11, "");
     tempSkinIndex[playerid] = 0;
+    tempArrivalIndex[playerid] = 0;
+    tempSkin[playerid] = 0;
     isCreating[playerid] = false;
 
     for(new i; i < 3; i++) TextDrawShowForPlayer(playerid, UI[i]);
@@ -282,12 +304,19 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid == DIALOG_CHARCREATE)
     {
         if(!response) return LoadPlayerCharacters(playerid);
+        
         if(strfind(inputtext, "_") == -1 || strlen(inputtext) < 5 || strlen(inputtext) > 20)
             return ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Error", 
                 "{FF0000}Nama harus pakai underscore dan 5-20 karakter!\nContoh: John_Doe", "Buat", "Kembali");
 
-        format(tempCharName[playerid], 24, "%s", inputtext);
-        ShowPlayerDialog(playerid, DIALOG_GENDER, DIALOG_STYLE_LIST, "Gender", "1. Male/Laki-Laki\n2. Female/Perempuan", "Pilih", "Batal");
+        // Simpan nama sementara untuk dicek
+        format(tempProposedName[playerid], 24, "%s", inputtext);
+
+        // Cek apakah nama sudah dipakai di seluruh server
+        new query[128];
+        mysql_format(sqldb, query, sizeof(query), "SELECT id FROM characters WHERE charname = '%e' LIMIT 1", tempProposedName[playerid]);
+        mysql_tquery(sqldb, query, "OnCharacterNameCheck", "i", playerid);
+        
         return 1;
     }
 
@@ -370,7 +399,75 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             }
             case 2: // Select
             {
-                new skinid = skinarray[tempSkinIndex[playerid]];
+                tempSkin[playerid] = skinarray[tempSkinIndex[playerid]];
+                tempArrivalIndex[playerid] = 0;
+                SetPlayerPos(playerid, ArrivalCoords[0][0], ArrivalCoords[0][1], ArrivalCoords[0][2]);
+                SetPlayerFacingAngle(playerid, ArrivalCoords[0][3]);
+                SetPlayerCameraPos(playerid, ArrivalCoords[0][0] - 5.0, ArrivalCoords[0][1], ArrivalCoords[0][2] + 0.5);
+                SetPlayerCameraLookAt(playerid, ArrivalCoords[0][0], ArrivalCoords[0][1], ArrivalCoords[0][2]);
+                new dtitle[32];
+                format(dtitle, sizeof(dtitle), "Arrival Location: %s", ArrivalNames[tempArrivalIndex[playerid]]);
+                ShowPlayerDialog(playerid, DIALOG_ARRIVAL, DIALOG_STYLE_LIST, dtitle, "Previous\nNext\nSelect\nCancel", "Choose", "");
+                return 1;
+            }
+            case 3: // Cancel
+            {
+                isCreating[playerid] = false;
+                SetPlayerVirtualWorld(playerid, 0);
+                TogglePlayerSpectating(playerid, 1);
+                ShowPlayerDialog(playerid, DIALOG_BIRTHDATE, DIALOG_STYLE_INPUT, "Tanggal Lahir", "Masukkan tanggal lahir (dd/mm/yyyy)\nContoh: 19/10/2000", "Lanjut", "Batal");
+                return 1;
+            }
+        }
+
+        // Reshow dialog for prev/next
+        new dtitle[32];
+        format(dtitle, sizeof(dtitle), "Choose Your Skin (ID: %d)", skinarray[tempSkinIndex[playerid]]);
+        ShowPlayerDialog(playerid, DIALOG_SKIN, DIALOG_STYLE_LIST, dtitle, "Previous\nNext\nSelect\nCancel", "Choose", "");
+        return 1;
+    }
+
+    if(dialogid == DIALOG_ARRIVAL)
+    {
+        if(!response)
+        {
+            // Back to skin selection
+            new skinarray[10];
+            if(tempGender[playerid] == 0) {
+                for(new i=0; i<10; i++) skinarray[i] = MaleSkins[i];
+            } else {
+                for(new i=0; i<10; i++) skinarray[i] = FemaleSkins[i];
+            }
+            SetPlayerSkin(playerid, skinarray[tempSkinIndex[playerid]]);
+            SetPlayerCameraPos(playerid, 1958.3783 - 5.0, 1343.1572, 15.3746 + 0.5);
+            SetPlayerCameraLookAt(playerid, 1958.3783, 1343.1572, 15.3746);
+            new dtitle[32];
+            format(dtitle, sizeof(dtitle), "Choose Your Skin (ID: %d)", skinarray[tempSkinIndex[playerid]]);
+            ShowPlayerDialog(playerid, DIALOG_SKIN, DIALOG_STYLE_LIST, dtitle, "Previous\nNext\nSelect\nCancel", "Choose", "");
+            return 1;
+        }
+
+        switch(listitem)
+        {
+            case 0: // Previous
+            {
+                tempArrivalIndex[playerid] = (tempArrivalIndex[playerid] - 1 + 3) % 3;
+                SetPlayerPos(playerid, ArrivalCoords[tempArrivalIndex[playerid]][0], ArrivalCoords[tempArrivalIndex[playerid]][1], ArrivalCoords[tempArrivalIndex[playerid]][2]);
+                SetPlayerFacingAngle(playerid, ArrivalCoords[tempArrivalIndex[playerid]][3]);
+                SetPlayerCameraPos(playerid, ArrivalCoords[tempArrivalIndex[playerid]][0] - 5.0, ArrivalCoords[tempArrivalIndex[playerid]][1], ArrivalCoords[tempArrivalIndex[playerid]][2] + 0.5);
+                SetPlayerCameraLookAt(playerid, ArrivalCoords[tempArrivalIndex[playerid]][0], ArrivalCoords[tempArrivalIndex[playerid]][1], ArrivalCoords[tempArrivalIndex[playerid]][2]);
+            }
+            case 1: // Next
+            {
+                tempArrivalIndex[playerid] = (tempArrivalIndex[playerid] + 1) % 3;
+                SetPlayerPos(playerid, ArrivalCoords[tempArrivalIndex[playerid]][0], ArrivalCoords[tempArrivalIndex[playerid]][1], ArrivalCoords[tempArrivalIndex[playerid]][2]);
+                SetPlayerFacingAngle(playerid, ArrivalCoords[tempArrivalIndex[playerid]][3]);
+                SetPlayerCameraPos(playerid, ArrivalCoords[tempArrivalIndex[playerid]][0] - 5.0, ArrivalCoords[tempArrivalIndex[playerid]][1], ArrivalCoords[tempArrivalIndex[playerid]][2] + 0.5);
+                SetPlayerCameraLookAt(playerid, ArrivalCoords[tempArrivalIndex[playerid]][0], ArrivalCoords[tempArrivalIndex[playerid]][1], ArrivalCoords[tempArrivalIndex[playerid]][2]);
+            }
+            case 2: // Select
+            {
+                new skinid = tempSkin[playerid];
                 new accname[MAX_PLAYER_NAME], query[300];
                 GetPlayerName(playerid, accname, sizeof(accname));
                 mysql_format(sqldb, query, sizeof(query),
@@ -390,18 +487,27 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             }
             case 3: // Cancel
             {
-                isCreating[playerid] = false;
-                SetPlayerVirtualWorld(playerid, 0);
-                TogglePlayerSpectating(playerid, 1);
-                ShowPlayerDialog(playerid, DIALOG_BIRTHDATE, DIALOG_STYLE_INPUT, "Tanggal Lahir", "Masukkan tanggal lahir (dd/mm/yyyy)\nContoh: 19/10/2000", "Lanjut", "Batal");
+                // Back to skin selection
+                new skinarray[10];
+                if(tempGender[playerid] == 0) {
+                    for(new i=0; i<10; i++) skinarray[i] = MaleSkins[i];
+                } else {
+                    for(new i=0; i<10; i++) skinarray[i] = FemaleSkins[i];
+                }
+                SetPlayerSkin(playerid, skinarray[tempSkinIndex[playerid]]);
+                SetPlayerCameraPos(playerid, 1958.3783 - 5.0, 1343.1572, 15.3746 + 0.5);
+                SetPlayerCameraLookAt(playerid, 1958.3783, 1343.1572, 15.3746);
+                new dtitle[32];
+                format(dtitle, sizeof(dtitle), "Choose Your Skin (ID: %d)", skinarray[tempSkinIndex[playerid]]);
+                ShowPlayerDialog(playerid, DIALOG_SKIN, DIALOG_STYLE_LIST, dtitle, "Previous\nNext\nSelect\nCancel", "Choose", "");
                 return 1;
             }
         }
 
         // Reshow dialog for prev/next
         new dtitle[32];
-        format(dtitle, sizeof(dtitle), "Choose Your Skin (ID: %d)", skinarray[tempSkinIndex[playerid]]);
-        ShowPlayerDialog(playerid, DIALOG_SKIN, DIALOG_STYLE_LIST, dtitle, "Previous\nNext\nSelect\nCancel", "Choose", "");
+        format(dtitle, sizeof(dtitle), "Arrival Location: %s", ArrivalNames[tempArrivalIndex[playerid]]);
+        ShowPlayerDialog(playerid, DIALOG_ARRIVAL, DIALOG_STYLE_LIST, dtitle, "Previous\nNext\nSelect\nCancel", "Choose", "");
         return 1;
     }
 
@@ -507,9 +613,11 @@ public OnCharacterSelected(playerid)
 
     pMoney[playerid] = money;
     SetPlayerName(playerid, pCharName[playerid][pSelectedChar[playerid]]);
+
     SetSpawnInfo(playerid, 0, skin, 1682.0001, -2330.7502, 13.5469, 358.5358, 0, 0, 0, 0, 0, 0);
     TogglePlayerSpectating(playerid, 0);
     SpawnPlayer(playerid);
+    SetPlayerSkin(playerid, skin); // Ensure skin is set correctly
 
     UpdateMoneyHUD(playerid);
     TextDrawShowForPlayer(playerid, MoneyTD[playerid]);
@@ -623,8 +731,6 @@ public OnPlayerSpawn(playerid)
     if(isCreating[playerid])
     {
         SetPlayerVirtualWorld(playerid, playerid + 1000);
-        SetPlayerCameraPos(playerid, 1958.3783 - 5.0, 1343.1572, 15.3746 + 0.5);
-        SetPlayerCameraLookAt(playerid, 1958.3783, 1343.1572, 15.3746);
         TogglePlayerControllable(playerid, 0);
         return 1;
     }
@@ -714,5 +820,27 @@ public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ)
 
     ShowPlayerDialog(playerid, DIALOG_TELEPORT, DIALOG_STYLE_MSGBOX, "Teleport", 
         "Yakin ingin teleport ke lokasi di peta?", "Ya", "Tidak");
+    return 1;
+}
+
+forward OnCharacterNameCheck(playerid);
+public OnCharacterNameCheck(playerid)
+{
+    if(cache_num_rows() > 0)
+    {
+        // Nama sudah dipakai orang lain
+        ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Nama Sudah Dipakai",
+            "{FF0000}Error: Nama karakter sudah digunakan oleh player lain!\n\
+            Silakan gunakan nama lain.\n\n\
+            Masukkan Nama Karakter (Format: Firstname_Lastname)\n\
+            Contoh: Michael_Smith",
+            tempProposedName[playerid], "Buat", "Kembali");
+    }
+    else
+    {
+        // Nama tersedia → lanjut ke proses pembuatan karakter
+        format(tempCharName[playerid], 24, "%s", tempProposedName[playerid]);
+        ShowPlayerDialog(playerid, DIALOG_GENDER, DIALOG_STYLE_LIST, "Gender", "1. Male/Laki-Laki\n2. Female/Perempuan", "Pilih", "Batal");
+    }
     return 1;
 }

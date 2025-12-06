@@ -84,3 +84,22 @@
 [21:22:37] [ERROR] error #1054 while executing query "SELECT id, charname, skin, lastlogin, birthdate FROM characters WHERE owner = 'farhanboutakp' ORDER BY id ASC LIMIT 3": Unknown column 'birthdate' in 'field list'
 [21:25:54] [WARNING] mysql_connect: no password specified
 [21:34:26] [WARNING] mysql_connect: no password specified
+[21:41:59] [WARNING] mysql_connect: no password specified
+[21:51:48] [WARNING] mysql_connect: no password specified
+[22:09:52] [WARNING] mysql_connect: no password specified
+[22:10:20] [ERROR] error #1054 while executing query "INSERT INTO characters (owner, charname, skin, money, lastlogin, birthdate, pos_x, pos_y, pos_z, pos_a) VALUES ('farhanboutakp', 'test_tess', 1, 5000, 0, '19/12/2000', 1682.000122, -2330.750244, 13.546900, 358.535797)": Unknown column 'pos_x' in 'field list'
+[22:10:28] [ERROR] error #1054 while executing query "SELECT money, skin, pos_x, pos_y, pos_z, pos_a FROM characters WHERE id = 17": Unknown column 'pos_x' in 'field list'
+[22:11:07] [ERROR] error #1054 while executing query "SELECT money, skin, pos_x, pos_y, pos_z, pos_a FROM characters WHERE id = 14": Unknown column 'pos_x' in 'field list'
+[22:11:51] [ERROR] error #1054 while executing query "INSERT INTO characters (owner, charname, skin, money, lastlogin, birthdate, pos_x, pos_y, pos_z, pos_a) VALUES ('farhanboutakp', 'lasd_asd', 1, 5000, 0, '19/02/2000', 1682.000122, -2330.750244, 13.546900, 358.535797)": Unknown column 'pos_x' in 'field list'
+[22:18:02] [WARNING] mysql_connect: no password specified
+[22:20:01] [WARNING] mysql_connect: no password specified
+[22:20:42] [ERROR] error #1054 while executing query "INSERT INTO characters (owner, charname, skin, money, lastlogin, birthdate, pos_x, pos_y, pos_z, pos_a) VALUES ('farhanboutakp', 'asd_asd', 1, 5000, 0, '12/12/2002', 1682.000122, -2330.750244, 13.546900, 358.535797)": Unknown column 'pos_x' in 'field list'
+[23:24:05] [WARNING] mysql_connect: no password specified
+[23:33:52] [WARNING] mysql_connect: no password specified
+[23:46:43] [WARNING] mysql_connect: no password specified
+[23:46:56] [WARNING] mysql_connect: no password specified
+[23:48:53] [WARNING] mysql_connect: no password specified
+[00:07:05] [WARNING] mysql_connect: no password specified
+[00:07:05] [ERROR] error #1062 while executing query "ALTER TABLE characters ADD UNIQUE IF NOT EXISTS unique_charname (charname)": Duplicate entry 'asdsadsa_asdsadsad' for key 'unique_charname'
+[00:09:05] [WARNING] mysql_connect: no password specified
+[00:09:05] [ERROR] error #1062 while executing query "ALTER TABLE characters ADD UNIQUE IF NOT EXISTS unique_charname (charname)": Duplicate entry 'asdsadsa_asdsadsad' for key 'unique_charname'
