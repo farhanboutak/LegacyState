@@ -46,3 +46,36 @@
 [00:06:50] [WARNING] mysql_connect: no password specified
 [00:14:47] [WARNING] mysql_connect: no password specified
 [00:19:07] [WARNING] mysql_connect: no password specified
+[00:48:57] [WARNING] mysql_connect: no password specified
+[00:49:12] [ERROR] error #1054 while executing query "SELECT password, admin FROM users WHERE name = 'mamarfarhan' LIMIT 1": Unknown column 'admin' in 'field list'
+[00:53:46] [WARNING] mysql_connect: no password specified
+[00:54:01] [ERROR] error #1054 while executing query "SELECT password, admin FROM users WHERE name = 'mamarfarhan' LIMIT 1": Unknown column 'admin' in 'field list'
+[00:56:13] [WARNING] mysql_connect: no password specified
+[00:56:29] [ERROR] error #1054 while executing query "SELECT password, admin FROM users WHERE name = 'mamarfarhan' LIMIT 1": Unknown column 'admin' in 'field list'
+[01:01:02] [WARNING] mysql_connect: no password specified
+[01:01:02] [WARNING] mysql_connect: no password specified
+[01:01:10] [WARNING] mysql_connect: no password specified
+[01:01:11] [WARNING] mysql_connect: no password specified
+[01:01:28] [ERROR] error #1054 while executing query "SELECT password, admin FROM users WHERE name = 'mamarfarhan' LIMIT 1": Unknown column 'admin' in 'field list'
+[01:02:22] [ERROR] error #1054 while executing query "SELECT password, admin FROM users WHERE name = 'mamarfarhan' LIMIT 1": Unknown column 'admin' in 'field list'
+[12:55:24] [WARNING] mysql_connect: no password specified
+[12:55:28] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[12:55:32] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[12:55:36] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[12:55:40] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[12:56:06] [ERROR] mysql_format: can't escape string 'farhanboutak'
+[14:23:46] [WARNING] mysql_connect: no password specified
+[14:23:51] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[14:23:55] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[14:23:59] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[14:24:03] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
+[14:24:24] [ERROR] mysql_format: can't escape string 'farhanboutak'
+[18:23:30] [WARNING] mysql_connect: no password specified
+[18:39:28] [WARNING] mysql_connect: no password specified
+[18:41:47] [WARNING] mysql_connect: no password specified
+[18:43:53] [WARNING] mysql_connect: no password specified
+[18:43:54] [WARNING] mysql_connect: no password specified
+[20:35:16] [WARNING] mysql_connect: no password specified
+[20:35:27] [WARNING] mysql_connect: no password specified
+[20:36:10] [WARNING] mysql_connect: no password specified
+[21:03:48] [WARNING] mysql_connect: no password specified

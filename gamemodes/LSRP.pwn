@@ -21,6 +21,7 @@
 #include <sscanf2>
 #include <zcmd>
 #include <whirlpool>
+#include <TimestampToDate>
 
 #define SQL_HOST    "localhost"
 #define SQL_USER    "root"
@@ -50,6 +51,9 @@ new RandomCars[] = {
     562,565,567,575,576,579,580,585,587,589,600,602,603
 };
 
+static const WeekDayName[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+static const MonthName[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
 // === FUNGSI GANTI UNDERSCORE KE SPASI ===
 stock ReplaceUnderscore(string[])
 {
@@ -57,6 +61,10 @@ stock ReplaceUnderscore(string[])
     {
         if(string[i] == '_') string[i] = ' ';
     }
+}
+
+stock GetWeekDay(timestamp) {
+    return ((timestamp / 86400) % 7 + 4) % 7; // 0=Sun, 1=Mon, ..., 6=Sat
 }
 
 main() {
@@ -257,7 +265,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         new accname[MAX_PLAYER_NAME], query[256];
         GetPlayerName(playerid, accname, sizeof(accname));
         mysql_format(sqldb, query, sizeof(query),
-            "INSERT INTO characters (owner, charname, skin, money) VALUES ('%e', '%e', 7, 5000)", accname, inputtext);
+            "INSERT INTO characters (owner, charname, skin, money, lastlogin) VALUES ('%e', '%e', 7, 5000, 0)", accname, inputtext);
         mysql_tquery(sqldb, query, "OnCharacterCreated", "i", playerid);
         return 1;
     }
@@ -279,7 +287,7 @@ public LoadPlayerCharacters(playerid)
     }
 
     mysql_format(sqldb, query, sizeof(query),
-        "SELECT id, charname, skin FROM characters WHERE owner = '%e' ORDER BY id ASC LIMIT %d", accname, MAX_CHARS);
+        "SELECT id, charname, skin, lastlogin FROM characters WHERE owner = '%e' ORDER BY id ASC LIMIT %d", accname, MAX_CHARS);
     mysql_tquery(sqldb, query, "OnCharactersLoaded", "i", playerid);
 }
 
@@ -299,19 +307,31 @@ public OnCharactersLoaded(playerid)
     {
         new id, skin;
         new cname[24], showname[24];
-
+        new lastlogin;
         cache_get_value_name_int(i, "id", id);
         cache_get_value_name(i, "charname", cname, 24);
         cache_get_value_name_int(i, "skin", skin);
+        cache_get_value_name_int(i, "lastlogin", lastlogin);
 
         pCharID[playerid][i] = id;
         format(pCharName[playerid][i], 24, "%s", cname);
         pCharSkin[playerid][i] = skin;
 
+        new laststr[32];
+        if(lastlogin == 0) {
+            format(laststr, sizeof(laststr), "Never");
+        } else {
+            new year, month, day, hour, minute, second;
+            TimestampToDate(lastlogin, year, month, day, hour, minute, second, 7, 0); // 7 untuk GMT+7 (Indonesia), ganti 0 jika UTC
+            new weekday = GetWeekDay(lastlogin);
+            format(laststr, sizeof(laststr), "%s %02d %s %d, %02d:%02d:%02d",
+                WeekDayName[weekday], day, MonthName[month-1], year, hour, minute, second);
+        }
+
         format(showname, sizeof(showname), "%s", cname);
         ReplaceUnderscore(showname);
 
-        format(string, sizeof(string), "%s{00FF00}[Slot %d] {FFFFFF}%s {AFAFAF}(Skin: %d)\n", string, i+1, showname, skin);
+        format(string, sizeof(string), "%s{00FF00}[Slot %d] {FFFFFF}%s {AFAFAF}(Skin: %d) - Last Login: %s\n", string, i+1, showname, skin, laststr);
         char_count++;
     }
 
@@ -343,6 +363,11 @@ public OnCharacterSelected(playerid)
     new money, skin;
     cache_get_value_name_int(0, "money", money);
     cache_get_value_name_int(0, "skin", skin);
+
+    new now = gettime();
+    new upquery[128];
+    mysql_format(sqldb, upquery, sizeof(upquery), "UPDATE characters SET lastlogin = %d WHERE id = %d", now, pCharID[playerid][pSelectedChar[playerid]]);
+    mysql_tquery(sqldb, upquery);
 
     pMoney[playerid] = money;
     SetPlayerSkin(playerid, skin);

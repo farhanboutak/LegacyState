@@ -205,7 +205,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             new showname[24], dialogstr[128];
             format(showname, sizeof(showname), "%s", pCharName[playerid][listitem]);
             ReplaceUnderscore(showname);
-            format(dialogstr, sizeof(dialogstr), "Apa yang ingin Anda lakukan dengan %s?\nMainkan\nHapus", showname);
+            format(dialogstr, sizeof(dialogstr), "\nMainkan\nHapus", showname);
             ShowPlayerDialog(playerid, DIALOG_CHAR_ACTION, DIALOG_STYLE_LIST, "Aksi Karakter", dialogstr, "Pilih", "Kembali");
         }
         return 1;
