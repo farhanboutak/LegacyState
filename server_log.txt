@@ -22841,3 +22841,516 @@ v0.3.7-R2, (C)2005-2015 SA-MP Team
 [12:27:14] [debug] Long callback execution detected (hang or performance issue)
 [12:27:14] [debug] AMX backtrace:
 [12:27:14] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[12:33:00] [debug] Long callback execution detected (hang or performance issue)
+[12:33:00] [debug] AMX backtrace:
+[12:33:00] [debug] #0 000003f4 in public UpdateTimeAndWeather () in gl_realtime.amx
+[13:05:26] [debug] Long callback execution detected (hang or performance issue)
+[13:05:26] [debug] AMX backtrace:
+[13:05:26] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[13:05:45] [debug] Long callback execution detected (hang or performance issue)
+[13:05:45] [debug] AMX backtrace:
+[13:05:45] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[13:10:09] [debug] Long callback execution detected (hang or performance issue)
+[13:10:09] [debug] AMX backtrace:
+[13:10:09] [debug] #0 000003d8 in public UpdateTimeAndWeather () in gl_realtime.amx
+[13:11:11] [debug] Long callback execution detected (hang or performance issue)
+[13:11:11] [debug] AMX backtrace:
+[13:11:11] [debug] #0 000003f4 in public UpdateTimeAndWeather () in gl_realtime.amx
+[13:14:12] [debug] Long callback execution detected (hang or performance issue)
+[13:14:12] [debug] AMX backtrace:
+[13:14:12] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+[13:14:40] [debug] Long callback execution detected (hang or performance issue)
+[13:14:40] [debug] AMX backtrace:
+[13:14:40] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[13:15:18] [debug] Long callback execution detected (hang or performance issue)
+[13:15:18] [debug] AMX backtrace:
+[13:15:18] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[13:33:06] 
+[13:33:06] Server Plugins
+[13:33:06] --------------
+[13:33:06]  Loading plugin: sscanf.DLL
+[13:33:06] 
+
+[13:33:06]  ===============================
+
+[13:33:06]       sscanf plugin loaded.     
+
+[13:33:06]          Version:  2.8.3        
+
+[13:33:06]   (c) 2018 Alex "Y_Less" Cole  
+
+[13:33:06]  ===============================
+
+[13:33:06]   Loaded.
+[13:33:06]  Loading plugin: mysql.dll
+[13:33:07]  >> plugin.mysql: R41-4 successfully loaded.
+[13:33:07]   Loaded.
+[13:33:07]  Loading plugin: Whirlpool.dll
+[13:33:07]  
+[13:33:07]  ==================
+[13:33:07]  
+[13:33:07]   Whirlpool loaded
+[13:33:07]  
+[13:33:07]  ==================
+[13:33:07]  
+[13:33:07]   Loaded.
+[13:33:07]  Loading plugin: crashdetect.dll
+[13:33:07]   CrashDetect plugin 4.22-1-gcd608b6
+[13:33:07]   Loaded.
+[13:33:07]  Loaded 4 plugins.
+
+[13:33:07] 
+[13:33:07] Filterscripts
+[13:33:07] ---------------
+[13:33:07]   Loading filterscript 'gl_actions.amx'...
+[13:33:07] AMX (45158064) loaded
+[13:33:07]   Loading filterscript 'gl_realtime.amx'...
+[13:33:07] AMX (44990896) loaded
+[13:33:07]   Loading filterscript 'gl_property.amx'...
+[13:33:07] AMX (44948288) loaded
+[13:33:07] 
+-----------------------------------
+[13:33:07] Grand Larceny Property Filterscript		
+[13:33:07] -----------------------------------
+
+[13:33:07]   Loading filterscript 'gl_mapicon.amx'...
+[13:33:07] AMX (44913880) loaded
+[13:33:07]   Loading filterscript 'ls_elevator.amx'...
+[13:33:07] AMX (44871272) loaded
+[13:33:07]   Loading filterscript 'attachments.amx'...
+[13:33:07] AMX (47499656) loaded
+[13:33:07]   Loading filterscript 'skinchanger.amx'...
+[13:33:07] AMX (47499768) loaded
+[13:33:07] 
+--Admin Player Skin Changer Loaded
+
+[13:33:07]   Loading filterscript 'vspawner.amx'...
+[13:33:07] AMX (47499880) loaded
+[13:33:07] 
+--Admin Vehicle Spawner Loaded
+
+[13:33:07]   Loading filterscript 'ls_mall.amx'...
+[13:33:07] AMX (47499992) loaded
+[13:33:07]   Loading filterscript 'ls_beachside.amx'...
+[13:33:07] AMX (47500104) loaded
+[13:33:07] 
+
+[13:33:07]   |---------------------------------------------------
+[13:33:07]   |--- LS BeachSide Filterscript
+[13:33:07]   |--  Script v1.03
+[13:33:07]   |--  19th April 2015
+[13:33:07]   |---------------------------------------------------
+[13:33:07]   |--  LS BeachSide Building Elevator created
+[13:33:07]   |---------------------------------------------------
+[13:33:07]   Loading filterscript 'npc_record.amx'...
+[13:33:07] AMX (47502448) loaded
+[13:33:07]   Loading filterscript 'stunt_island.amx'...
+[13:33:07] AMX (47502560) loaded
+[13:33:07] 
+
+[13:33:07]   |---------------------------------------------------
+[13:33:07]   |--- Stunt Island Filterscript by Matite and Kye
+[13:33:07]   |--  Script v1.02
+[13:33:07]   |--  13th February 2015
+[13:33:07]   |---------------------------------------------------
+[13:33:07] [debug] Long callback execution detected (hang or performance issue)
+[13:33:07] [debug] AMX backtrace:
+[13:33:07] [debug] #0 00001e10 in public OnFilterScriptInit () in stunt_island.amx
+[13:33:07]   Loading filterscript 'stunt_island2.amx'...
+[13:33:07] AMX (47573056) loaded
+[13:33:07] 
+
+[13:33:07]   |---------------------------------------------------
+[13:33:07]   |--- Stunt Island Filterscript 2 by Matite and Kye
+[13:33:07]   |--  Script v1.00
+[13:33:07]   |--  Sept 2017
+[13:33:07]   |---------------------------------------------------
+[13:33:07]   Loading filterscript 'ospawner.amx'...
+[13:33:07] AMX (47574848) loaded
+[13:33:07] 
+--Admin Vehicle Spawner Loaded
+
+[13:33:07]   Loaded 14 filterscripts.
+
+[13:33:07] AMX (45000728) loaded
+[13:33:07] [MySQL] Koneksi Berhasil!
+[13:33:07] [debug] Long callback execution detected (hang or performance issue)
+[13:33:07] [debug] AMX backtrace:
+[13:33:07] [debug] #0 000002b4 in ?? (383048, 382792, 32, 39) in gl_property.amx
+[13:33:07] [debug] #1 000012c0 in ?? (365300) in gl_property.amx
+[13:33:07] [debug] #2 00003178 in ?? () in gl_property.amx
+[13:33:07] [debug] #3 00003524 in public OnGameModeInit () in gl_property.amx
+[13:33:07] Reading File: blank
+[13:33:07] Reading File: properties/houses.txt
+[13:33:07] Reading File: properties/businesses.txt
+[13:33:07] Reading File: properties/banks.txt
+[13:33:07] Reading File: properties/police.txt
+[13:33:07] 
+==================================
+[13:33:07]  LSRP BETA 0.7.5 - Fitur Baru!    
+[13:33:07] ==================================
+
+[13:33:07] Number of vehicle models: 4
+[13:33:32] [connection] incoming connection: 127.0.0.1:55096 id: 0
+[13:33:33] [connection] incoming connection: 127.0.0.1:55097 id: 0
+[13:33:33] [join] farhanboutak has joined the server (0:127.0.0.1)
+[13:33:33] [debug] Long callback execution detected (hang or performance issue)
+[13:33:33] [debug] AMX backtrace:
+[13:33:33] [debug] #0 0000b1b0 in ?? (0) in stunt_island.amx
+[13:33:33] [debug] #1 000021c0 in public OnPlayerConnect (0) in stunt_island.amx
+[13:34:21] [part] Jesse_Goodman has left the server (0:1)
+[13:34:34] [connection] incoming connection: 127.0.0.1:63557 id: 0
+[13:34:35] [connection] incoming connection: 127.0.0.1:63558 id: 0
+[13:34:35] [join] farhanboutak has joined the server (0:127.0.0.1)
+[13:34:52] [debug] Long callback execution detected (hang or performance issue)
+[13:34:52] [debug] AMX backtrace:
+[13:34:52] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+[13:35:14] [debug] Long callback execution detected (hang or performance issue)
+[13:35:14] [debug] AMX backtrace:
+[13:35:14] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[13:35:59] 
+[13:35:59] Server Plugins
+[13:35:59] --------------
+[13:35:59]  Loading plugin: sscanf.DLL
+[13:35:59] 
+
+[13:35:59]  ===============================
+
+[13:35:59]       sscanf plugin loaded.     
+
+[13:35:59]          Version:  2.8.3        
+
+[13:35:59]   (c) 2018 Alex "Y_Less" Cole  
+
+[13:35:59]  ===============================
+
+[13:35:59]   Loaded.
+[13:35:59]  Loading plugin: mysql.dll
+[13:35:59]  >> plugin.mysql: R41-4 successfully loaded.
+[13:35:59]   Loaded.
+[13:35:59]  Loading plugin: Whirlpool.dll
+[13:35:59]  
+[13:35:59]  ==================
+[13:35:59]  
+[13:35:59]   Whirlpool loaded
+[13:35:59]  
+[13:35:59]  ==================
+[13:35:59]  
+[13:35:59]   Loaded.
+[13:35:59]  Loading plugin: crashdetect.dll
+[13:36:00]   CrashDetect plugin 4.22-1-gcd608b6
+[13:36:00]   Loaded.
+[13:36:00]  Loaded 4 plugins.
+
+[13:36:00] 
+[13:36:00] Filterscripts
+[13:36:00] ---------------
+[13:36:00]   Loading filterscript 'gl_actions.amx'...
+[13:36:00] AMX (43781808) loaded
+[13:36:00]   Loading filterscript 'gl_realtime.amx'...
+[13:36:00] AMX (43614640) loaded
+[13:36:00]   Loading filterscript 'gl_property.amx'...
+[13:36:00] AMX (43572032) loaded
+[13:36:00] 
+-----------------------------------
+[13:36:00] Grand Larceny Property Filterscript		
+[13:36:00] -----------------------------------
+
+[13:36:00]   Loading filterscript 'gl_mapicon.amx'...
+[13:36:00] AMX (43537624) loaded
+[13:36:00]   Loading filterscript 'ls_elevator.amx'...
+[13:36:00] AMX (43495016) loaded
+[13:36:00]   Loading filterscript 'attachments.amx'...
+[13:36:00] AMX (46123400) loaded
+[13:36:00]   Loading filterscript 'skinchanger.amx'...
+[13:36:00] AMX (46123512) loaded
+[13:36:00] 
+--Admin Player Skin Changer Loaded
+
+[13:36:00]   Loading filterscript 'vspawner.amx'...
+[13:36:00] AMX (46123624) loaded
+[13:36:00] 
+--Admin Vehicle Spawner Loaded
+
+[13:36:00]   Loading filterscript 'ls_mall.amx'...
+[13:36:00] AMX (46123736) loaded
+[13:36:00]   Loading filterscript 'ls_beachside.amx'...
+[13:36:00] AMX (46123848) loaded
+[13:36:00] 
+
+[13:36:00]   |---------------------------------------------------
+[13:36:00]   |--- LS BeachSide Filterscript
+[13:36:00]   |--  Script v1.03
+[13:36:00]   |--  19th April 2015
+[13:36:00]   |---------------------------------------------------
+[13:36:00]   |--  LS BeachSide Building Elevator created
+[13:36:00]   |---------------------------------------------------
+[13:36:00] [debug] Long callback execution detected (hang or performance issue)
+[13:36:00] [debug] AMX backtrace:
+[13:36:00] [debug] #0 000003b8 in public OnFilterScriptInit () in ls_beachside.amx
+[13:36:00]   Loading filterscript 'npc_record.amx'...
+[13:36:00] AMX (46126192) loaded
+[13:36:00]   Loading filterscript 'stunt_island.amx'...
+[13:36:00] AMX (46126304) loaded
+[13:36:00] 
+
+[13:36:00]   |---------------------------------------------------
+[13:36:00]   |--- Stunt Island Filterscript by Matite and Kye
+[13:36:00]   |--  Script v1.02
+[13:36:00]   |--  13th February 2015
+[13:36:00]   |---------------------------------------------------
+[13:36:00] [debug] Long callback execution detected (hang or performance issue)
+[13:36:00] [debug] AMX backtrace:
+[13:36:00] [debug] #0 00001e10 in public OnFilterScriptInit () in stunt_island.amx
+[13:36:00]   Loading filterscript 'stunt_island2.amx'...
+[13:36:00] AMX (46196800) loaded
+[13:36:00] 
+
+[13:36:00]   |---------------------------------------------------
+[13:36:00]   |--- Stunt Island Filterscript 2 by Matite and Kye
+[13:36:00]   |--  Script v1.00
+[13:36:00]   |--  Sept 2017
+[13:36:00]   |---------------------------------------------------
+[13:36:00]   Loading filterscript 'ospawner.amx'...
+[13:36:00] AMX (46198592) loaded
+[13:36:00] 
+--Admin Vehicle Spawner Loaded
+
+[13:36:00]   Loaded 14 filterscripts.
+
+[13:36:00] AMX (43624472) loaded
+[13:36:00] [MySQL] Koneksi Berhasil!
+[13:36:00] [debug] Long callback execution detected (hang or performance issue)
+[13:36:00] [debug] AMX backtrace:
+[13:36:00] [debug] #0 0000035c in ?? (383048, 28208, 59, 57) in gl_property.amx
+[13:36:00] [debug] #1 000013bc in ?? (365300) in gl_property.amx
+[13:36:00] [debug] #2 00003178 in ?? () in gl_property.amx
+[13:36:00] [debug] #3 00003524 in public OnGameModeInit () in gl_property.amx
+[13:36:00] Reading File: blank
+[13:36:00] Reading File: properties/houses.txt
+[13:36:00] Reading File: properties/businesses.txt
+[13:36:00] Reading File: properties/banks.txt
+[13:36:00] Reading File: properties/police.txt
+[13:36:00] 
+==================================
+[13:36:00]  LSRP BETA 0.7.5 - Fitur Baru!    
+[13:36:00] ==================================
+
+[13:36:00] Number of vehicle models: 4
+[13:36:13] [connection] incoming connection: 127.0.0.1:56787 id: 0
+[13:36:14] [join] Jesse_Goodman has joined the server (0:127.0.0.1)
+[13:36:14] [debug] Long callback execution detected (hang or performance issue)
+[13:36:14] [debug] AMX backtrace:
+[13:36:14] [debug] #0 000058cc in ?? (0) in stunt_island.amx
+[13:36:14] [debug] #1 000021c0 in public OnPlayerConnect (0) in stunt_island.amx
+[13:36:53] [part] farhanboutak has left the server (0:1)
+[13:37:07] [connection] incoming connection: 127.0.0.1:55687 id: 0
+[13:37:08] [connection] incoming connection: 127.0.0.1:55688 id: 0
+[13:37:08] [join] farhanboutak has joined the server (0:127.0.0.1)
+[13:37:08] [debug] Long callback execution detected (hang or performance issue)
+[13:37:08] [debug] AMX backtrace:
+[13:37:08] [debug] #0 0000ab70 in ?? (0) in stunt_island.amx
+[13:37:08] [debug] #1 000021c0 in public OnPlayerConnect (0) in stunt_island.amx
+[13:40:40] [debug] Long callback execution detected (hang or performance issue)
+[13:40:40] [debug] AMX backtrace:
+[13:40:40] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[13:45:47] 
+[13:45:47] Server Plugins
+[13:45:47] --------------
+[13:45:47]  Loading plugin: sscanf.DLL
+[13:45:47] 
+
+[13:45:47]  ===============================
+
+[13:45:47]       sscanf plugin loaded.     
+
+[13:45:47]          Version:  2.8.3        
+
+[13:45:47]   (c) 2018 Alex "Y_Less" Cole  
+
+[13:45:47]  ===============================
+
+[13:45:47]   Loaded.
+[13:45:47]  Loading plugin: mysql.dll
+[13:45:47]  >> plugin.mysql: R41-4 successfully loaded.
+[13:45:47]   Loaded.
+[13:45:47]  Loading plugin: Whirlpool.dll
+[13:45:47]  
+[13:45:47]  ==================
+[13:45:47]  
+[13:45:47]   Whirlpool loaded
+[13:45:47]  
+[13:45:47]  ==================
+[13:45:47]  
+[13:45:47]   Loaded.
+[13:45:47]  Loading plugin: crashdetect.dll
+[13:45:47]   CrashDetect plugin 4.22-1-gcd608b6
+[13:45:47]   Loaded.
+[13:45:47]  Loaded 4 plugins.
+
+[13:45:47] 
+[13:45:47] Filterscripts
+[13:45:47] ---------------
+[13:45:47]   Loading filterscript 'gl_actions.amx'...
+[13:45:47] AMX (45026992) loaded
+[13:45:47]   Loading filterscript 'gl_realtime.amx'...
+[13:45:47] AMX (44859824) loaded
+[13:45:47]   Loading filterscript 'gl_property.amx'...
+[13:45:47] AMX (44817216) loaded
+[13:45:47] 
+-----------------------------------
+[13:45:47] Grand Larceny Property Filterscript		
+[13:45:47] -----------------------------------
+
+[13:45:47]   Loading filterscript 'gl_mapicon.amx'...
+[13:45:47] AMX (44782808) loaded
+[13:45:47]   Loading filterscript 'ls_elevator.amx'...
+[13:45:47] AMX (44740200) loaded
+[13:45:47]   Loading filterscript 'attachments.amx'...
+[13:45:47] AMX (47368584) loaded
+[13:45:47]   Loading filterscript 'skinchanger.amx'...
+[13:45:47] AMX (47368696) loaded
+[13:45:47] 
+--Admin Player Skin Changer Loaded
+
+[13:45:47]   Loading filterscript 'vspawner.amx'...
+[13:45:47] AMX (47368808) loaded
+[13:45:47] 
+--Admin Vehicle Spawner Loaded
+
+[13:45:47]   Loading filterscript 'ls_mall.amx'...
+[13:45:47] AMX (47368920) loaded
+[13:45:47]   Loading filterscript 'ls_beachside.amx'...
+[13:45:47] AMX (47369032) loaded
+[13:45:47] 
+
+[13:45:47]   |---------------------------------------------------
+[13:45:47]   |--- LS BeachSide Filterscript
+[13:45:47]   |--  Script v1.03
+[13:45:47]   |--  19th April 2015
+[13:45:47]   |---------------------------------------------------
+[13:45:47] [debug] Long callback execution detected (hang or performance issue)
+[13:45:47] [debug] AMX backtrace:
+[13:45:47] [debug] #0 00003040 in ?? (12) in ls_beachside.amx
+[13:45:47] [debug] #1 000018ec in ?? () in ls_beachside.amx
+[13:45:47] [debug] #2 0000035c in public OnFilterScriptInit () in ls_beachside.amx
+[13:45:47]   |--  LS BeachSide Building Elevator created
+[13:45:47]   |---------------------------------------------------
+[13:45:47]   Loading filterscript 'npc_record.amx'...
+[13:45:47] AMX (47371376) loaded
+[13:45:47]   Loading filterscript 'stunt_island.amx'...
+[13:45:47] AMX (47371488) loaded
+[13:45:47] 
+
+[13:45:47]   |---------------------------------------------------
+[13:45:47]   |--- Stunt Island Filterscript by Matite and Kye
+[13:45:47]   |--  Script v1.02
+[13:45:47]   |--  13th February 2015
+[13:45:47]   |---------------------------------------------------
+[13:45:47]   Loading filterscript 'stunt_island2.amx'...
+[13:45:47] AMX (47441984) loaded
+[13:45:47] 
+
+[13:45:47]   |---------------------------------------------------
+[13:45:47]   |--- Stunt Island Filterscript 2 by Matite and Kye
+[13:45:47]   |--  Script v1.00
+[13:45:47]   |--  Sept 2017
+[13:45:47]   |---------------------------------------------------
+[13:45:47]   Loading filterscript 'ospawner.amx'...
+[13:45:47] AMX (47443776) loaded
+[13:45:47] 
+--Admin Vehicle Spawner Loaded
+
+[13:45:47]   Loaded 14 filterscripts.
+
+[13:45:47] AMX (44869656) loaded
+[13:45:47] [MySQL] Koneksi Berhasil!
+[13:45:47] [debug] Long callback execution detected (hang or performance issue)
+[13:45:47] [debug] AMX backtrace:
+[13:45:47] [debug] #0 00000320 in ?? (383048, 382792, 32, 7) in gl_property.amx
+[13:45:47] [debug] #1 00001050 in ?? (365300) in gl_property.amx
+[13:45:48] [debug] #2 00003178 in ?? () in gl_property.amx
+[13:45:48] [debug] #3 00003524 in public OnGameModeInit () in gl_property.amx
+[13:45:48] Reading File: blank
+[13:45:48] Reading File: properties/houses.txt
+[13:45:48] Reading File: properties/businesses.txt
+[13:45:48] Reading File: properties/banks.txt
+[13:45:48] Reading File: properties/police.txt
+[13:45:48] 
+==================================
+[13:45:48]  LSRP BETA 0.7.5 - Fitur Baru!    
+[13:45:48] ==================================
+
+[13:45:48] Number of vehicle models: 4
+[13:46:01] [connection] incoming connection: 127.0.0.1:58778 id: 0
+[13:46:01] [join] Jesse_Goodman has joined the server (0:127.0.0.1)
+[13:46:01] [debug] Long callback execution detected (hang or performance issue)
+[13:46:01] [debug] AMX backtrace:
+[13:46:01] [debug] #0 0000b2dc in ?? (0) in stunt_island.amx
+[13:46:01] [debug] #1 000021c0 in public OnPlayerConnect (0) in stunt_island.amx
+[13:46:31] [part] farhanboutak has left the server (0:1)
+[13:47:07] [connection] incoming connection: 127.0.0.1:54617 id: 0
+[13:47:07] [connection] incoming connection: 127.0.0.1:54618 id: 0
+[13:47:08] [join] farhanboutak has joined the server (0:127.0.0.1)
+[13:47:34] [debug] Long callback execution detected (hang or performance issue)
+[13:47:34] [debug] AMX backtrace:
+[13:47:35] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+[13:48:11] [part] farhanboutak has left the server (0:1)
+[13:48:37] [connection] incoming connection: 127.0.0.1:49902 id: 0
+[13:48:37] [connection] incoming connection: 127.0.0.1:49903 id: 0
+[13:48:38] [join] farhanboutak has joined the server (0:127.0.0.1)
+[13:51:27] [debug] Long callback execution detected (hang or performance issue)
+[13:51:27] [debug] AMX backtrace:
+[13:51:27] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+[13:52:15] [debug] Long callback execution detected (hang or performance issue)
+[13:52:15] [debug] AMX backtrace:
+[13:52:15] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[13:52:18] [part] farhanboutak has left the server (0:1)
+[13:59:48] [debug] Long callback execution detected (hang or performance issue)
+[13:59:48] [debug] AMX backtrace:
+[13:59:48] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+[14:01:26] [debug] Long callback execution detected (hang or performance issue)
+[14:01:26] [debug] AMX backtrace:
+[14:01:26] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[14:01:43] [debug] Long callback execution detected (hang or performance issue)
+[14:01:43] [debug] AMX backtrace:
+[14:01:43] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[14:03:30] [debug] Long callback execution detected (hang or performance issue)
+[14:03:30] [debug] AMX backtrace:
+[14:03:30] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[14:04:15] [debug] Long callback execution detected (hang or performance issue)
+[14:04:15] [debug] AMX backtrace:
+[14:04:15] [debug] #0 0000e140 in public SIAutoFix () in stunt_island.amx
+[14:04:18] [debug] Long callback execution detected (hang or performance issue)
+[14:04:19] [debug] AMX backtrace:
+[14:04:20] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx
+[14:21:22] [debug] Long callback execution detected (hang or performance issue)
+[14:21:22] [debug] AMX backtrace:
+[14:21:22] [debug] #0 0000e11c in public SIAutoFix () in stunt_island.amx

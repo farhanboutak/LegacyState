@@ -54,7 +54,7 @@ new ReportPlayer[MAX_REPORTS];
 new ReportTime[MAX_REPORTS];
 new ReportCount = 0;
 new LastReportTime[MAX_PLAYERS];
-
+new TimerPosisi[MAX_PLAYERS char]; // hemat memori
 
 new tempProposedName[MAX_PLAYERS][24]; // untuk menyimpan nama yang sedang dicek
 
@@ -133,6 +133,21 @@ stock SetPlayerMoney(playerid, money)
     GivePlayerMoney(playerid, money);
 }
 
+enum pInfo
+{
+    // ... data lain yang sudah ada
+    Float:pPosX,
+    Float:pPosY,
+    Float:pPosZ,
+    Float:pPosA,
+    pInterior,
+    pWorld
+};
+
+
+new PlayerInfo[MAX_PLAYERS][pInfo];
+
+
 main() {
     print("\n==================================");
     print(" LSRP BETA 0.7.5 - Fitur Baru!    ");
@@ -148,6 +163,17 @@ new pUCPName[MAX_PLAYERS][MAX_PLAYER_NAME]; // Simpan UCP permanen
 
 new pSpecTarget[MAX_PLAYERS] = {-1, ...}; // Siapa yang lagi di-spectate
 new bool:pSpectating[MAX_PLAYERS];
+new Timer:PositionTimer[MAX_PLAYERS];
+
+forward AutoSaveAllPositions();
+public AutoSaveAllPositions()
+{
+    foreach(new i : Player)
+    {
+        SavePlayerPosition(i);
+    }
+    return 1;
+}
 
 public OnGameModeInit()
 {
@@ -194,6 +220,8 @@ public OnGameModeInit()
     TextDrawColor(UI[2], -1); TextDrawSetOutline(UI[2], 1); TextDrawSetProportional(UI[2], 1);
 
     SetTimer("PayDay", 600000, true);
+
+    SetTimer("AutoSaveAllPositions", 60000, true); // Save setiap 1 menit
     
     return 1;
 }
@@ -416,7 +444,10 @@ public OnPlayerDisconnect(playerid, reason)
     }
     // =======================================
 
-    // ... kode OnPlayerDisconnect kamu yang lain (reset variabel, dll) tetap di sini
+// 5. Hentikan timer saat disconnect (di public OnPlayerDisconnect, sebelum reset variabel)
+    KillTimer(TimerPosisi{playerid}); // kalau mau lebih aman, simpan timer ID
+// atau cara paling gampang (karena kita pakai SetTimerEx langsung):
+// cukup biarkan, akan otomatis mati saat player disconnect 
 
     return 1;
 }
@@ -657,7 +688,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(listitem == 0)
         {
             new query[128];
-            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
+            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a, interior, vw FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
             mysql_tquery(sqldb, query, "OnCharacterSelected", "i", playerid);
         }
         else if(listitem == 1)
@@ -903,6 +934,32 @@ public OnCharactersLoaded(playerid)
     ShowPlayerDialog(playerid, DIALOG_CHARLIST, DIALOG_STYLE_LIST, "{FFFFFF}=== PILIH KARAKTER ===", string, "Pilih", "Keluar");
 }
 
+stock UpdatePlayerPosition(playerid)
+{
+    if(!IsPlayerConnected(playerid) || !pLogged{playerid} || pSelectedCharID[playerid][pSelectedChar[playerid]] == 0)
+        return 0;
+
+    new Float:x, Float:y, Float:z, Float:a;
+    GetPlayerPos(playerid, x, y, z);
+    GetPlayerFacingAngle(playerid, a);
+
+    // Query super ringan, cuma update posisi + interior + vw
+    new query[256];
+    mysql_format(sqldb, query, sizeof(query),
+        "UPDATE `characters` SET \
+        `pos_x` = %.4f, `pos_y` = %.4f, `pos_z` = %.4f, `pos_a` = %.4f, \
+        `interior` = %d, `vw` = %d \
+        WHERE `id` = %d LIMIT 1",
+        x, y, z, a,
+        GetPlayerInterior(playerid),
+        GetPlayerVirtualWorld(playerid),
+        pCharID[playerid][pSelectedChar[playerid]]
+    );
+    mysql_tquery(sqldb, query); // Fire-and-forget (paling cepat)
+
+    return 1;
+}
+
 forward OnCharacterCreated(playerid);
 public OnCharacterCreated(playerid)
 {
@@ -919,11 +976,13 @@ public OnCharacterSelected(playerid)
 {
     if(cache_num_rows() == 0) return LoadPlayerCharacters(playerid);
 
-    new money, skin;
+    new money, skin, interior, vw;
     new Float:posx, Float:posy, Float:posz, Float:posa;
 
     cache_get_value_name_int(0, "money", money);
     cache_get_value_name_int(0, "skin", skin);
+    cache_get_value_name_int(0, "interior", interior);
+    cache_get_value_name_int(0, "vw", vw);
     cache_get_value_name_float(0, "pos_x", posx);
     cache_get_value_name_float(0, "pos_y", posy);
     cache_get_value_name_float(0, "pos_z", posz);
@@ -972,6 +1031,23 @@ public OnCharacterSelected(playerid)
         SetPlayerColor(playerid, 0xFFFFFFFF); // Putih
     }
 
+// ... (kode pMoney[playerid] = money; dan update lastlogin tetap)
+
+// Spawn player (kode lama tetap)
+    SetSpawnInfo(playerid, 0, skin, posx, posy, posz, posa, 0, 0, 0, 0, 0, 0);
+    TogglePlayerSpectating(playerid, 0);
+    SpawnPlayer(playerid);
+    SetPlayerSkin(playerid, skin);
+
+    // 4. Mulai timer saat player spawn (di dalam public OnCharacterSelected, setelah SpawnPlayer(playerid);)
+    SetTimerEx("SavePlayerPositionTimer", 4000, true, "i", playerid); // 4 detik sekali
+
+// TAMBAHKAN INI SETELAH SetPlayerSkin:
+    SetPlayerInterior(playerid, interior);
+    SetPlayerVirtualWorld(playerid, vw);
+
+// ... (sisa kode selamat datang tetap)
+
     // Spawn player
     SetSpawnInfo(playerid, 0, skin, posx, posy, posz, posa, 0, 0, 0, 0, 0, 0);
     TogglePlayerSpectating(playerid, 0);
@@ -993,6 +1069,23 @@ public OnCharacterSelected(playerid)
         SendClientMessage(playerid, COLOR_RED, "[ADMIN] ADMIN DUTY: ON | Gunakan command admin dengan bijak!");
 
     SendClientMessage(playerid, -1, "{ADD8E6}[SERVER] {FFFFFF}Karakter berhasil dimuat. Selamat bermain di Legacy State Roleplay.");
+
+    return 1;
+}
+
+stock SavePlayerPosition(playerid)
+{
+    if(!pLogged{playerid} || pSelectedChar[playerid] == -1) return 0;
+
+    new Float:x, Float:y, Float:z, Float:a;
+    GetPlayerPos(playerid, x, y, z);
+    GetPlayerFacingAngle(playerid, a);
+
+    new query[512];
+    mysql_format(sqldb, query, sizeof(query),
+        "UPDATE `characters` SET `money` = %d, `pos_x` = %f, `pos_y` = %f, `pos_z` = %f, `pos_a` = %f, `interior` = %d, `vw` = %d WHERE `id` = %d",
+        pMoney[playerid], x, y, z, a, GetPlayerInterior(playerid), GetPlayerVirtualWorld(playerid), pCharID[playerid][pSelectedChar[playerid]]);
+    mysql_tquery(sqldb, query);
 
     return 1;
 }
@@ -2314,6 +2407,30 @@ CMD:answer(playerid, params[])
             SendClientMessage(i, 0x87CEEBFF, pesan);
         }
     }
+
+    return 1;
+}
+
+// 3. Buat fungsi save (taruh di bawah-bawah file, sebelum #endif)
+forward SavePlayerPositionTimer(playerid);
+public SavePlayerPositionTimer(playerid)
+{
+    if(!IsPlayerConnected(playerid) || !pLogged{playerid} || pSelectedChar[playerid] == -1)
+        return 0;
+
+    new Float:x, Float:y, Float:z, Float:a;
+    GetPlayerPos(playerid, x, y, z);
+    GetPlayerFacingAngle(playerid, a);
+
+    new query[300];
+    mysql_format(sqldb, query, sizeof(query),
+        "UPDATE `characters` SET pos_x=%.4f,pos_y=%.4f,pos_z=%.4f,pos_a=%.4f,interior=%d,vw=%d,money=%d WHERE id=%d LIMIT 1",
+        x, y, z, a,
+        GetPlayerInterior(playerid),
+        GetPlayerVirtualWorld(playerid),
+        pMoney[playerid],
+        pCharID[playerid][pSelectedChar[playerid]]);
+    mysql_tquery(sqldb, query);
 
     return 1;
 }

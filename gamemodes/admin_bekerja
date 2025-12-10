@@ -441,7 +441,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(listitem == 0) // Mainkan
         {
             new query[128];
-            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
+            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a, interior, vw FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
             mysql_tquery(sqldb, query, "OnCharacterSelected", "i", playerid);
         }
         else if(listitem == 1) // Hapus
