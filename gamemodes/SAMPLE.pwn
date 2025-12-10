@@ -1,0 +1,1120 @@
+// ========================================
+// LSRP BETA 0.3 - FINAL VERSION: CHARACTER SELECTION 100% BERHASIL + CHAT TANPA _ + PESAN LOGIN
+// ========================================
+
+#define DIALOG_TELEPORT    5000
+#define DIALOG_REGISTER    5001
+#define DIALOG_LOGIN       5002
+#define DIALOG_PAY         5003
+#define DIALOG_CHARLIST    5004
+#define DIALOG_CHARCREATE  5005
+#define DIALOG_CHAR_ACTION 5006
+#define DIALOG_CHAR_DELETE 5007
+#define DIALOG_GENDER      5008
+#define DIALOG_BIRTHDATE   5009
+#define DIALOG_SKIN        5010
+#define DIALOG_ARRIVAL     5011
+
+#define COLOR_WHITE        0xFFFFFFFF
+#define COLOR_RED          0xFF0000FF
+#define COLOR_GREEN        0x00FF00FF
+#define COLOR_YELLOW       0xFFFF00FF
+
+#include <a_samp>
+#include <a_mysql>
+#include <sscanf2>
+#include <zcmd>
+#include <whirlpool>
+#include <TimestampToDate>
+
+#define SQL_HOST    "localhost"
+#define SQL_USER    "root"
+#define SQL_PASS    ""
+#define SQL_DB      "samp"
+#define MAX_CHARS   3
+
+new MySQL:sqldb;
+
+new tempProposedName[MAX_PLAYERS][24]; // untuk menyimpan nama yang sedang dicek
+
+// === [ADMIN SYSTEM - TABEL SENDIRI] ===
+// Tambahkan di paling atas (setelah include)
+new pAdminLevel[MAX_PLAYERS];
+new bool:pAdminDuty[MAX_PLAYERS];
+
+
+// pemilihan karakter
+new pCurrentPreviewClass[MAX_PLAYERS];
+new bool:inSkinClassSelection[MAX_PLAYERS];
+new bool:inArrivalClassSelection[MAX_PLAYERS];
+
+new pAccountName[MAX_PLAYERS][MAX_PLAYER_NAME];
+
+new bool:pLogged[MAX_PLAYERS];
+new pLoginAttempts[MAX_PLAYERS];
+new Float:tpX[MAX_PLAYERS], Float:tpY[MAX_PLAYERS], Float:tpZ[MAX_PLAYERS];
+new pMoney[MAX_PLAYERS];
+new pMoneyToday[MAX_PLAYERS];
+new Text:MoneyTD[MAX_PLAYERS];
+new Text:UI[3];
+
+new pCharID[MAX_PLAYERS][MAX_CHARS];
+new pCharName[MAX_PLAYERS][MAX_CHARS][24];
+new pCharSkin[MAX_PLAYERS][MAX_CHARS];
+new pSelectedChar[MAX_PLAYERS] = {-1, ...};
+
+new tempCharName[MAX_PLAYERS][24];
+new tempGender[MAX_PLAYERS];
+new tempBirthdate[MAX_PLAYERS][11];
+new tempSkinIndex[MAX_PLAYERS];
+new tempArrivalIndex[MAX_PLAYERS];
+new tempSkin[MAX_PLAYERS];
+new bool:isCreating[MAX_PLAYERS];
+
+new RandomCars[] = {
+    400,401,402,404,405,409,411,412,415,418,419,420,421,422,424,426,429,434,436,439,
+    442,445,451,458,466,467,474,475,477,478,479,480,489,491,492,496,500,506,507,516,
+    517,518,527,529,533,540,541,542,545,546,547,549,550,551,554,555,558,559,560,561,
+    562,565,567,575,576,579,580,585,587,589,600,602,603
+};
+
+static const MaleSkins[10] = {1, 2, 7, 14, 15, 16, 17, 18, 19, 20};
+static const FemaleSkins[10] = {9, 10, 11, 12, 13, 31, 38, 39, 40, 41};
+
+static const ArrivalNames[3][] = {
+    "Los Santos Airport",
+    "Los Santos Market Station",
+    "Los Santos Unity Station"
+};
+
+static const Float:ArrivalCoords[3][4] = {
+    {1682.0001, -2330.7502, 13.5469, 358.5358},
+    {821.4300, -1341.1800, 12.3200, 90.0000},
+    {1759.5500, -1945.7900, 13.5600, 270.0000}
+};
+
+static const WeekDayName[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+static const MonthName[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+// === FUNGSI GANTI UNDERSCORE KE SPASI ===
+stock ReplaceUnderscore(string[])
+{
+    for(new i = 0, j = strlen(string); i < j; i++)
+    {
+        if(string[i] == '_') string[i] = ' ';
+    }
+}
+
+stock GetWeekDay(timestamp) {
+    return ((timestamp / 86400) % 7 + 4) % 7; // 0=Sun, 1=Mon, ..., 6=Sat
+}
+
+main() {
+    print("\n==================================");
+    print(" LSRP BETA 0.3 - penambahan baru    ");
+    print("==================================\n");
+}
+
+public OnGameModeInit()
+{
+    SetGameModeText("LS|RP BETA 0.3");
+
+    sqldb = mysql_connect(SQL_HOST, SQL_USER, SQL_PASS, SQL_DB);
+    if(mysql_errno(sqldb)) print("[MySQL] Koneksi GAGAL!");
+    else print("[MySQL] Koneksi Berhasil!");
+
+    // Create tables if not exist
+    mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS users (name VARCHAR(24) PRIMARY KEY, password VARCHAR(129))");
+    mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS characters (id INT AUTO_INCREMENT PRIMARY KEY, owner VARCHAR(24), charname VARCHAR(24), skin INT, money INT, lastlogin INT)");
+
+    // Add birthdate column if not exists
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS birthdate VARCHAR(10) NOT NULL DEFAULT ''");
+
+    // Tambah kolom posisi spawn
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS pos_x FLOAT DEFAULT 1682.0001");
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS pos_y FLOAT DEFAULT -2330.7502");
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS pos_z FLOAT DEFAULT 13.5469");
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS pos_a FLOAT DEFAULT 358.5358");
+
+    // Membuat charname unik di database (mencegah race condition)
+    mysql_tquery(sqldb, "ALTER TABLE characters ADD UNIQUE IF NOT EXISTS unique_charname (charname)");
+
+    // Tambahkan ini di OnGameModeInit() setelah mysql_tquery untuk characters
+    mysql_tquery(sqldb, "ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_level INT DEFAULT 0");
+    mysql_tquery(sqldb, "ALTER TABLE users ADD COLUMN IF NOT EXISTS banned INT DEFAULT 0");
+
+    // OnGameModeInit (tambah ini setelah bikin tabel characters)
+mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS admins (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(24) UNIQUE, level INT DEFAULT 1)");
+
+    UI[0] = TextDrawCreate(267.0, 5.0, "Legacy");
+    TextDrawFont(UI[0], 0); TextDrawLetterSize(UI[0], 0.404166, 1.450000);
+    TextDrawColor(UI[0], -1); TextDrawSetOutline(UI[0], 1); TextDrawSetProportional(UI[0], 1);
+
+    UI[1] = TextDrawCreate(269.0, 17.0, "State");
+    TextDrawFont(UI[1], 3); TextDrawLetterSize(UI[1], 0.404166, 1.500000);
+    TextDrawColor(UI[1], -1); TextDrawSetOutline(UI[1], 1); TextDrawSetProportional(UI[1], 1);
+
+    UI[2] = TextDrawCreate(314.0, 17.0, "Roleplay");
+    TextDrawFont(UI[2], 3); TextDrawLetterSize(UI[2], 0.404166, 1.450000);
+    TextDrawColor(UI[2], -1); TextDrawSetOutline(UI[2], 1); TextDrawSetProportional(UI[2], 1);
+
+    SetTimer("PayDay", 600000, true);
+    SetTimer("UpdateMoneyHUD", 500, true);
+    
+    return 1;
+}
+
+
+public OnPlayerConnect(playerid)
+{
+    pAdminLevel[playerid] = 0;
+    pAdminDuty[playerid] = false;
+    new name[MAX_PLAYER_NAME];
+    GetPlayerName(playerid, name, sizeof(name));
+    format(pAccountName[playerid], MAX_PLAYER_NAME, "%s", name); // Simpan UCP
+
+    // Tambahkan cek ban ini di OnPlayerConnect(playerid) setelah GetPlayerName(playerid, name, sizeof(name));
+new banquery[128];
+mysql_format(sqldb, banquery, sizeof(banquery), "SELECT banned FROM users WHERE name = '%e' LIMIT 1", name);
+new Cache:result = mysql_query(sqldb, banquery);
+if(cache_num_rows(result) > 0) {
+    new banned;
+    cache_get_value_name_int(0, "banned", banned);
+    if(banned == 1) {
+        SendClientMessage(playerid, COLOR_RED, "Akun ini telah dibanned dari server!");
+        SetTimerEx("DelayedKick", 1000, false, "i", playerid);
+        cache_delete(result);
+        return 1;
+    }
+}
+cache_delete(result);
+
+    for(new i = 0, j = GetPlayerPoolSize(); i <= j; i++)
+    {
+        if(i != playerid && IsPlayerConnected(i))
+        {
+            if(!strcmp(pAccountName[playerid], pAccountName[i], true)) // Bandingkan UCP, case-insensitive
+            {
+                SendClientMessage(playerid, COLOR_RED, "Akun ini sedang digunakan oleh pemain lain. Silakan tunggu atau gunakan akun lain.");
+                SetTimerEx("DelayedKick", 1000, false, "i", playerid);
+                return 1;
+            }
+        }
+    }
+
+    pLogged{playerid} = false;
+    pLoginAttempts[playerid] = 0;
+    pSelectedChar[playerid] = -1;
+    format(tempCharName[playerid], 24, "");
+    tempGender[playerid] = 0;
+    format(tempBirthdate[playerid], 11, "");
+    tempSkinIndex[playerid] = 0;
+    tempArrivalIndex[playerid] = 0;
+    tempSkin[playerid] = 0;
+    isCreating[playerid] = false;
+
+    for(new i; i < 3; i++) TextDrawShowForPlayer(playerid, UI[i]);
+
+    TogglePlayerSpectating(playerid, 1);
+
+    new query[128];
+    mysql_format(sqldb, query, sizeof(query), "SELECT password FROM users WHERE name = '%e' LIMIT 1", name);
+    mysql_tquery(sqldb, query, "OnPlayerDataCheck", "i", playerid);
+
+    pMoney[playerid] = 0;
+    pAdmin[playerid] = 0;
+    // Tambahkan ini di OnPlayerConnect(playerid) setelah pAdmin[playerid] = 0;
+    pAdminDuty[playerid] = false;
+
+    MoneyTD[playerid] = TextDrawCreate(550.0, 420.0, "$0");
+    TextDrawFont(MoneyTD[playerid], 3);
+    TextDrawLetterSize(MoneyTD[playerid], 0.4, 1.8);
+    TextDrawColor(MoneyTD[playerid], 0x00FF00FF);
+    TextDrawSetOutline(MoneyTD[playerid], 1);
+    TextDrawSetShadow(MoneyTD[playerid], 2);
+    TextDrawAlignment(MoneyTD[playerid], 2);
+    TextDrawBackgroundColor(MoneyTD[playerid], 0x00000099);
+    TextDrawUseBox(MoneyTD[playerid], 1);
+    TextDrawBoxColor(MoneyTD[playerid], 0x00000055);
+    TextDrawTextSize(MoneyTD[playerid], 100.0, 20.0);
+
+    return 1;
+}
+
+// Tambah ini jika belum ada (untuk reset variabel saat disconnect)
+public OnPlayerDisconnect(playerid, reason)
+{
+    pAdminDuty[playerid] = false;
+    if(MoneyTD[playerid] != Text:INVALID_TEXT_DRAW) TextDrawDestroy(MoneyTD[playerid]);
+    format(pAccountName[playerid], MAX_PLAYER_NAME, ""); // Reset UCP
+    pLogged{playerid} = false;
+    // Tambahkan ini di OnPlayerDisconnect(playerid, reason) setelah pLogged{playerid} = false;
+    pAdminDuty[playerid] = false;
+    pSelectedChar[playerid] = -1;
+    return 1;
+}
+
+forward DelayedKick(playerid);
+public DelayedKick(playerid)
+{
+    if(IsPlayerConnected(playerid)) Kick(playerid);
+    return 1;
+}
+
+forward OnPlayerDataCheck(playerid);
+public OnPlayerDataCheck(playerid)
+{
+    if(cache_num_rows() > 0)
+        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", "Masukkan password:", "Login", "Keluar");
+    else
+        ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Registrasi", "Akun belum terdaftar!\nMasukkan password baru:", "Daftar", "Keluar");
+    return 1;
+}
+
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
+{
+    if(dialogid == DIALOG_REGISTER)
+    {
+        if(!response) return Kick(playerid);
+        if(strlen(inputtext) < 6) return ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Registrasi", "Error: Password minimal 6 karakter!", "Daftar", "Keluar");
+
+        new hash[129], name[MAX_PLAYER_NAME], query[256];
+        GetPlayerName(playerid, name, sizeof(name));
+        WP_Hash(hash, sizeof(hash), inputtext);
+        mysql_format(sqldb, query, sizeof(query), "INSERT INTO users (name, password) VALUES ('%e', '%s')", name, hash);
+        mysql_tquery(sqldb, query);
+
+        SendClientMessage(playerid, COLOR_GREEN, "Registrasi berhasil! Silakan login.");
+        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", "Masukkan password:", "Login", "Keluar");
+        return 1;
+    }
+
+    if(dialogid == DIALOG_LOGIN)
+    {
+        if(!response) return Kick(playerid);
+
+        new name[MAX_PLAYER_NAME], query[256];
+        GetPlayerName(playerid, name, sizeof(name));
+        mysql_format(sqldb, query, sizeof(query), "SELECT password FROM users WHERE name = '%e'", name);
+        mysql_tquery(sqldb, query, "OnPlayerLoginAttempt", "is", playerid, inputtext);
+        return 1;
+    }
+
+    if(dialogid == DIALOG_TELEPORT)
+    {
+        if(response)
+        {
+            SetPlayerPos(playerid, tpX[playerid], tpY[playerid], tpZ[playerid] + 1.0);
+            SetPlayerInterior(playerid, 0);
+            SetPlayerVirtualWorld(playerid, 0);
+            SendClientMessage(playerid, COLOR_WHITE, "Teleportasi berhasil!");
+        }
+        else SendClientMessage(playerid, COLOR_WHITE, "Teleportasi dibatalkan.");
+        return 1;
+    }
+
+    // === CHARACTER SELECTION - 100% DIPERBAIKI ===
+    if(dialogid == DIALOG_CHARLIST)
+    {
+        if(!response) return Kick(playerid);
+
+        // Hitung berapa karakter yang sudah ada
+        new total_chars = 0;
+        for(new i = 0; i < MAX_CHARS; i++)
+            if(pCharID[playerid][i] != 0) total_chars++;
+
+        // Jika klik di atas jumlah karakter → berarti klik "Buat Karakter Baru"
+        if(listitem >= total_chars)
+        {
+            if(total_chars >= MAX_CHARS)
+            {
+                SendClientMessage(playerid, COLOR_RED, "Kamu sudah memiliki 3 karakter maksimal!");
+                LoadPlayerCharacters(playerid);
+                return 1;
+            }
+            ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Buat Karakter Baru",
+                "{FFFFFF}Masukkan Nama Karakter (Format: Firstname_Lastname)\nContoh: Michael_Smith", "Buat", "Kembali");
+        }
+        else
+        {
+            // Klik karakter yang ada → tampilkan opsi aksi (Mainkan/Hapus)
+            pSelectedChar[playerid] = listitem;
+            new showname[24], dialogstr[128];
+            format(showname, sizeof(showname), "%s", pCharName[playerid][listitem]);
+            ReplaceUnderscore(showname);
+            format(dialogstr, sizeof(dialogstr), "\nMainkan\nHapus", showname);
+            ShowPlayerDialog(playerid, DIALOG_CHAR_ACTION, DIALOG_STYLE_LIST, "Aksi Karakter", dialogstr, "Pilih", "Kembali");
+        }
+        return 1;
+    }
+
+    if(dialogid == DIALOG_CHAR_ACTION)
+    {
+        if(!response) return LoadPlayerCharacters(playerid);
+
+        if(listitem == 0) // Mainkan
+        {
+            new query[128];
+            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
+            mysql_tquery(sqldb, query, "OnCharacterSelected", "i", playerid);
+        }
+        else if(listitem == 1) // Hapus
+        {
+            new showname[24], dialogstr[128];
+            format(showname, sizeof(showname), "%s", pCharName[playerid][pSelectedChar[playerid]]);
+            ReplaceUnderscore(showname);
+            format(dialogstr, sizeof(dialogstr), "Yakin ingin menghapus %s? Aksi ini tidak bisa dibatalkan!", showname);
+            ShowPlayerDialog(playerid, DIALOG_CHAR_DELETE, DIALOG_STYLE_MSGBOX, "Konfirmasi Hapus Karakter", dialogstr, "Ya", "Tidak");
+        }
+        return 1;
+    }
+
+    if(dialogid == DIALOG_CHAR_DELETE)
+    {
+        if(!response) return LoadPlayerCharacters(playerid);
+
+        // Hapus karakter dari database
+        new query[128];
+        mysql_format(sqldb, query, sizeof(query), "DELETE FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
+        mysql_tquery(sqldb, query);
+
+        SendClientMessage(playerid, COLOR_RED, "Karakter berhasil dihapus!");
+        pSelectedChar[playerid] = -1;
+        LoadPlayerCharacters(playerid);
+        return 1;
+    }
+
+    if(dialogid == DIALOG_CHARCREATE)
+    {
+        if(!response) return LoadPlayerCharacters(playerid);
+        
+        if(strfind(inputtext, "_") == -1 || strlen(inputtext) < 5 || strlen(inputtext) > 20)
+            return ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Error", 
+                "{FF0000}Nama harus pakai underscore dan 5-20 karakter!\nContoh: Michael_Smith", "Buat", "Kembali");
+
+        // Simpan nama sementara untuk dicek
+        format(tempProposedName[playerid], 24, "%s", inputtext);
+
+        // Cek apakah nama sudah dipakai di seluruh server
+        new query[128];
+        mysql_format(sqldb, query, sizeof(query), "SELECT id FROM characters WHERE charname = '%e' LIMIT 1", tempProposedName[playerid]);
+        mysql_tquery(sqldb, query, "OnCharacterNameCheck", "i", playerid);
+        
+        return 1;
+    }
+
+    if(dialogid == DIALOG_GENDER)
+    {
+        if(!response)
+        {
+            ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Buat Karakter Baru",
+                "{FFFFFF}Masukkan Nama Karakter (Format: Firstname_Lastname)\nContoh: Michael_Smith", "Buat", "Kembali");
+            return 1;
+        }
+        tempGender[playerid] = listitem;
+        ShowPlayerDialog(playerid, DIALOG_BIRTHDATE, DIALOG_STYLE_INPUT, "Tanggal Lahir", "Masukkan tanggal lahir (dd/mm/yyyy)\nContoh: 19/10/2000", "Lanjut", "Batal");
+        return 1;
+    }
+
+    if(dialogid == DIALOG_BIRTHDATE)
+    {
+        if(!response) return ShowPlayerDialog(playerid, DIALOG_GENDER, DIALOG_STYLE_LIST, "Gender", "1. Male/Laki-Laki\n2. Female/Perempuan", "Pilih", "Batal");
+
+        new day, month, year;
+        if(sscanf(inputtext, "p</>iii", day, month, year) || day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2005)
+            return ShowPlayerDialog(playerid, DIALOG_BIRTHDATE, DIALOG_STYLE_INPUT, "Error", "{FF0000}Format salah! Masukkan dd/mm/yyyy\nContoh: 19/10/2000", "Lanjut", "Batal");
+
+        format(tempBirthdate[playerid], 11, "%02d/%02d/%d", day, month, year);
+
+        inSkinClassSelection[playerid] = true;
+        inArrivalClassSelection[playerid] = false;
+        isCreating[playerid] = true;
+
+        // Gunakan exterior (airport default) untuk skin selection agar tidak blank
+        new Float:skinX = ArrivalCoords[0][0], Float:skinY = ArrivalCoords[0][1], Float:skinZ = ArrivalCoords[0][2], Float:skinA = ArrivalCoords[0][3];
+        if(tempGender[playerid] == 0)
+        {
+            for(new i = 0; i < 10; i++)
+                AddPlayerClass(MaleSkins[i], skinX, skinY, skinZ, skinA, 0, 0, 0, 0, 0, 0);
+        }
+        else
+        {
+            for(new i = 0; i < 10; i++)
+                AddPlayerClass(FemaleSkins[i], skinX, skinY, skinZ, skinA, 0, 0, 0, 0, 0, 0);
+        }
+
+        SetPlayerInterior(playerid, 0);
+        SetPlayerVirtualWorld(playerid, 0);
+        TogglePlayerSpectating(playerid, 0);
+
+        SendClientMessage(playerid, -1, "");
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Gunakan panah kiri/kanan untuk ganti penampilan");
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Tekan {FFFF00}SPAWN {FFFFFF}jika sudah yakin dengan penampilan ini");
+
+        return 1;
+    }
+    
+    // Hapus response DIALOG_SKIN dan DIALOG_ARRIVAL karena tidak digunakan di flow class selection
+
+    return 0;
+}
+
+forward LoadPlayerCharacters(playerid);
+public LoadPlayerCharacters(playerid)
+{
+    new accname[MAX_PLAYER_NAME], query[256];
+    GetPlayerName(playerid, accname, sizeof(accname));
+
+    for(new i = 0; i < MAX_CHARS; i++)
+    {
+        pCharID[playerid][i] = 0;
+        format(pCharName[playerid][i], 24, "Kosong");
+        pCharSkin[playerid][i] = 0;
+    }
+
+    mysql_format(sqldb, query, sizeof(query),
+        "SELECT id, charname, skin, lastlogin, birthdate FROM characters WHERE owner = '%e' ORDER BY id ASC LIMIT %d", accname, MAX_CHARS);
+    mysql_tquery(sqldb, query, "OnCharactersLoaded", "i", playerid);
+}
+
+forward OnCharactersLoaded(playerid);
+public OnCharactersLoaded(playerid)
+{
+    new rows = cache_num_rows();
+    new string[700];
+
+    new char_count = 0;
+
+    // Reset array
+    for(new i = 0; i < MAX_CHARS; i++) pCharID[playerid][i] = 0;
+
+    // Tampilkan karakter yang ada
+    for(new i = 0; i < rows && i < MAX_CHARS; i++)
+    {
+        new id, skin;
+        new cname[24], showname[24], birthstr[11];
+        new lastlogin;
+        cache_get_value_name_int(i, "id", id);
+        cache_get_value_name(i, "charname", cname, 24);
+        cache_get_value_name_int(i, "skin", skin);
+        cache_get_value_name_int(i, "lastlogin", lastlogin);
+        cache_get_value_name(i, "birthdate", birthstr, 11);
+
+        pCharID[playerid][i] = id;
+        format(pCharName[playerid][i], 24, "%s", cname);
+        pCharSkin[playerid][i] = skin;
+
+        new laststr[32];
+        if(lastlogin == 0) {
+            format(laststr, sizeof(laststr), "Never");
+        } else {
+            new year, month, day, hour, minute, second;
+            TimestampToDate(lastlogin, year, month, day, hour, minute, second, 7, 0); // 7 untuk GMT+7 (Indonesia), ganti 0 jika UTC
+            new weekday = GetWeekDay(lastlogin);
+            format(laststr, sizeof(laststr), "%s %02d %s %d, %02d:%02d:%02d",
+                WeekDayName[weekday], day, MonthName[month-1], year, hour, minute, second);
+        }
+
+        format(showname, sizeof(showname), "%s", cname);
+        ReplaceUnderscore(showname);
+
+        format(string, sizeof(string), "%s{00FF00}[Slot %d] {FFFFFF}%s {AFAFAF}(Skin: %d) - Last Login: %s - Birth: %s\n", string, i+1, showname, skin, laststr, birthstr);
+        char_count++;
+    }
+
+    // Tambahkan "Buat Karakter Baru" hanya sekali jika ada slot kosong
+    if(char_count < MAX_CHARS)
+    {
+        format(string, sizeof(string), "%s{FFFF00}[Slot %d] {00FF00}Buat Karakter Baru\n", string, char_count+1);
+    }
+
+    ShowPlayerDialog(playerid, DIALOG_CHARLIST, DIALOG_STYLE_LIST, "{FFFFFF}=== PILIH KARAKTER ===", string, "Pilih", "Keluar");
+}
+
+forward OnCharacterCreated(playerid);
+public OnCharacterCreated(playerid)
+{
+    if(cache_insert_id())
+    {
+        SendClientMessage(playerid, COLOR_GREEN, "Karakter berhasil dibuat!");
+        LoadPlayerCharacters(playerid);
+    }
+    return 1;
+}
+
+forward OnCharacterSelected(playerid);
+public OnCharacterSelected(playerid)
+{
+    if(cache_num_rows() == 0) return LoadPlayerCharacters(playerid);
+
+    new money, skin;
+    new Float:posx, Float:posy, Float:posz, Float:posa;
+    cache_get_value_name_int(0, "money", money);
+    cache_get_value_name_int(0, "skin", skin);
+    cache_get_value_name_float(0, "pos_x", posx);
+    cache_get_value_name_float(0, "pos_y", posy);
+    cache_get_value_name_float(0, "pos_z", posz);
+    cache_get_value_name_float(0, "pos_a", posa);
+
+    new now = gettime();
+    new upquery[128];
+    mysql_format(sqldb, upquery, sizeof(upquery), "UPDATE characters SET lastlogin = %d WHERE id = %d", now, pCharID[playerid][pSelectedChar[playerid]]);
+    mysql_tquery(sqldb, upquery);
+
+    pMoney[playerid] = money;
+    SetPlayerName(playerid, pCharName[playerid][pSelectedChar[playerid]]);
+
+    SetSpawnInfo(playerid, 0, skin, posx, posy, posz, posa, 0, 0, 0, 0, 0, 0);
+    TogglePlayerSpectating(playerid, 0);
+    SpawnPlayer(playerid);
+    SetPlayerSkin(playerid, skin); // Ensure skin is set correctly
+
+    UpdateMoneyHUD(playerid);
+    TextDrawShowForPlayer(playerid, MoneyTD[playerid]);
+
+    pLogged{playerid} = true;
+
+    new showname[24];
+    format(showname, sizeof(showname), "%s", pCharName[playerid][pSelectedChar[playerid]]);
+    ReplaceUnderscore(showname);
+    new msg[128];
+    format(msg, sizeof(msg), "{00FF00}Anda login sebagai {FFFFFF}%s", showname);
+    SendClientMessage(playerid, -1, msg);
+
+    SendClientMessage(playerid, COLOR_YELLOW, "Karakter berhasil dimuat! Selamat bermain di Legacy State Roleplay!");
+}
+
+forward UpdateMoneyHUD(playerid);
+public UpdateMoneyHUD(playerid)
+{
+    if(!IsPlayerConnected(playerid)) return 0;
+    new string[32];
+    format(string, sizeof(string), "$%d", pMoney[playerid]);
+    TextDrawSetString(MoneyTD[playerid], string);
+    TextDrawShowForPlayer(playerid, MoneyTD[playerid]);
+    return 1;
+}
+
+forward OnPlayerLoginAttempt(playerid, inputpass[]);
+public OnPlayerLoginAttempt(playerid, inputpass[])
+{
+    if(!cache_num_rows())
+    {
+        pLoginAttempts[playerid]++;
+        if(pLoginAttempts[playerid] >= 3)
+        {
+            SendClientMessage(playerid, COLOR_RED, "3x salah password. Kamu dikick!");
+            Kick(playerid);
+        }
+        else
+        {
+            new str[128];
+            format(str, sizeof(str), "Password salah! Kesempatan tersisa: %d/3", 3 - pLoginAttempts[playerid]);
+            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", str, "Login", "Keluar");
+        }
+        return 1;
+    }
+
+    new dbpass[129];
+    cache_get_value_name(0, "password", dbpass, 129);
+
+    new hash[129];
+    WP_Hash(hash, sizeof(hash), inputpass);
+
+    if(strcmp(hash, dbpass) == 0)
+    {
+        new name[MAX_PLAYER_NAME], query[128];
+        GetPlayerName(playerid, name, sizeof(name));
+        mysql_format(sqldb, query, sizeof(query), "SELECT level FROM admins WHERE name = '%e' LIMIT 1", name);
+        mysql_tquery(sqldb, query, "OnCheckAdminLevel", "i", playerid);
+
+        SendClientMessage(playerid, COLOR_GREEN, "Login berhasil! Memuat karakter...");
+        pLoginAttempts[playerid] = 0;
+        LoadPlayerCharacters(playerid);
+    }
+    else
+    {
+        pLoginAttempts[playerid]++;
+        if(pLoginAttempts[playerid] >= 3)
+        {
+            SendClientMessage(playerid, COLOR_RED, "3x salah password. Kamu dikick!");
+            Kick(playerid);
+        }
+        else
+        {
+            new str[128];
+            format(str, sizeof(str), "Password salah! Kesempatan tersisa: %d/3", 3 - pLoginAttempts[playerid]);
+            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", str, "Login", "Keluar");
+        }
+    }
+    return 1;
+}
+
+forward OnCheckAdminLevel(playerid);
+public OnCheckAdminLevel(playerid)
+{
+    if(cache_num_rows())
+    {
+        cache_get_value_name_int(0, "level", pAdminLevel[playerid]);  // INI SUDAH BENAR
+        new str[80];
+        format(str, sizeof(str), "Selamat datang kembali, Admin Level %d! Ketik /adminduty untuk aktifkan mode admin.", pAdminLevel[playerid]);
+        SendClientMessage(playerid, COLOR_YELLOW, str);
+    }
+    else
+    {
+        pAdminLevel[playerid] = 0;
+    }
+    return 1;
+}
+
+// Tambahkan forward dan public ini di script (bisa setelah OnPlayerLoginAttempt)
+forward OnAdminDutyPasswordCheck(playerid, inputpass[]);
+public OnAdminDutyPasswordCheck(playerid, inputpass[])
+{
+    if(!cache_num_rows()) return SendClientMessage(playerid, COLOR_RED, "Error: Data akun tidak ditemukan!");
+
+    new dbpass[129];
+    cache_get_value_name(0, "password", dbpass, 129);
+    new hash[129];
+    WP_Hash(hash, sizeof(hash), inputpass);
+
+    if(!strcmp(hash, dbpass))
+    {
+        pAdminDuty[playerid] = true;
+        SetPlayerColor(playerid, COLOR_RED);
+        SetPlayerName(playerid, pAccountName[playerid]);
+        SendClientMessage(playerid, COLOR_GREEN, "Admin duty ON. Nama jadi UCP dan warna merah.");
+    }
+    else
+    {
+        SendClientMessage(playerid, COLOR_RED, "Password UCP salah!");
+    }
+    return 1;
+}
+
+public OnPlayerRequestClass(playerid, classid)
+{
+    pCurrentPreviewClass[playerid] = classid;
+
+    if(inSkinClassSelection[playerid])
+    {
+        new Float:skinX = ArrivalCoords[0][0], Float:skinY = ArrivalCoords[0][1], Float:skinZ = ArrivalCoords[0][2], Float:skinA = ArrivalCoords[0][3];
+        SetPlayerPos(playerid, skinX, skinY, skinZ);
+        SetPlayerFacingAngle(playerid, skinA);
+        SetPlayerCameraPos(playerid, skinX - 5.0 * floatsin(skinA, degrees), skinY - 5.0 * floatcos(skinA, degrees), skinZ + 0.5);
+        SetPlayerCameraLookAt(playerid, skinX, skinY, skinZ);
+        SetPlayerTime(playerid, 12, 0);
+        SetPlayerWeather(playerid, 1);
+
+        if(tempGender[playerid] == 0)
+            SetPlayerSkin(playerid, MaleSkins[classid % 10]);
+        else
+            SetPlayerSkin(playerid, FemaleSkins[classid % 10]);
+
+        return 1;
+    }
+    else if(inArrivalClassSelection[playerid])
+    {
+        new loc = classid % 3;
+        SetPlayerInterior(playerid, 0);
+        SetPlayerVirtualWorld(playerid, 0);
+        SetPlayerPos(playerid, ArrivalCoords[loc][0], ArrivalCoords[loc][1], ArrivalCoords[loc][2]);
+        SetPlayerFacingAngle(playerid, ArrivalCoords[loc][3]);
+        SetPlayerCameraPos(playerid, ArrivalCoords[loc][0] - 5.0 * floatsin(ArrivalCoords[loc][3], degrees), ArrivalCoords[loc][1] - 5.0 * floatcos(ArrivalCoords[loc][3], degrees), ArrivalCoords[loc][2] + 0.5);
+        SetPlayerCameraLookAt(playerid, ArrivalCoords[loc][0], ArrivalCoords[loc][1], ArrivalCoords[loc][2]);
+        SetPlayerTime(playerid, 12, 0);
+        SetPlayerWeather(playerid, 1);
+
+        SetPlayerSkin(playerid, tempSkin[playerid]);
+
+        GameTextForPlayer(playerid, "~y~~h~Lokasi Kedatangan:~n~~w~%s", 3000, 3, ArrivalNames[loc]);
+        return 1;
+    }
+    return 1;
+}
+
+public OnPlayerRequestSpawn(playerid)
+{
+    if(inSkinClassSelection[playerid])
+    {
+        // Simpan skin yang dipilih
+        if(tempGender[playerid] == 0)
+            tempSkin[playerid] = MaleSkins[pCurrentPreviewClass[playerid] % 10];
+        else
+            tempSkin[playerid] = FemaleSkins[pCurrentPreviewClass[playerid] % 10];
+
+        // Switch ke preview lokasi kedatangan
+        for(new i = 0; i < 3; i++)
+        {
+            AddPlayerClass(tempSkin[playerid],
+                ArrivalCoords[i][0], ArrivalCoords[i][1], ArrivalCoords[i][2], ArrivalCoords[i][3],
+                0, 0, 0, 0, 0, 0);
+        }
+
+        inSkinClassSelection[playerid] = false;
+        inArrivalClassSelection[playerid] = true;
+
+        SendClientMessage(playerid, -1, "");
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Gunakan panah kiri/kanan untuk ganti lokasi kedatangan");
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Tekan {FFFF00}SPAWN {FFFFFF}jika sudah yakin");
+
+        return 0; // tetap di class selection
+    }
+    else if(inArrivalClassSelection[playerid])
+    {
+        tempArrivalIndex[playerid] = pCurrentPreviewClass[playerid] % 3;
+
+        // Buat karakter di database dengan posisi arrival yang dipilih
+        new accname[MAX_PLAYER_NAME], query[300];
+        GetPlayerName(playerid, accname, sizeof(accname));
+        mysql_format(sqldb, query, sizeof(query),
+            "INSERT INTO characters (owner, charname, skin, money, lastlogin, birthdate, pos_x, pos_y, pos_z, pos_a) VALUES ('%e', '%e', %d, 5000, 0, '%s', %f, %f, %f, %f)",
+            accname, tempCharName[playerid], tempSkin[playerid], tempBirthdate[playerid],
+            ArrivalCoords[tempArrivalIndex[playerid]][0], ArrivalCoords[tempArrivalIndex[playerid]][1],
+            ArrivalCoords[tempArrivalIndex[playerid]][2], ArrivalCoords[tempArrivalIndex[playerid]][3]);
+        mysql_tquery(sqldb, query, "OnCharacterCreated", "i", playerid);
+
+        SendClientMessage(playerid, COLOR_GREEN, "[SERVER]: Karakter berhasil dibuat! Selamat datang di Legacy State Roleplay!");
+
+        // Reset state
+        isCreating[playerid] = false;
+        inSkinClassSelection[playerid] = false;
+        inArrivalClassSelection[playerid] = false;
+
+        TogglePlayerSpectating(playerid, 1);
+        return 0;
+    }
+
+    // Spawn normal untuk karakter yang sudah dipilih (sebelumnya)
+    if(pSelectedChar[playerid] == -1 && !isCreating[playerid])
+    {
+        SendClientMessage(playerid, COLOR_RED, "Kamu harus memilih karakter terlebih dahulu!");
+        return 0;
+    }
+    return 1;
+}
+
+public OnPlayerCommandPerformed(playerid, cmdtext[], success)
+{
+    if(!success)
+    {
+        if(pLogged{playerid})
+        {
+            new string[128];
+            format(string, sizeof(string), "{FF6347}[SERVER] {FFFFFF}Perintah \"{CCCCCC}%s{FFFFFF}\" tidak ditemukan.", cmdtext);
+            SendClientMessage(playerid, -1, string);
+        }
+        else SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+    }
+    return 1;
+}
+
+public OnPlayerSpawn(playerid)
+{
+    if(!pLogged{playerid} && !isCreating[playerid])
+    {
+        Kick(playerid);
+        return 1;
+    }
+
+    if(isCreating[playerid])
+    {
+        SetPlayerVirtualWorld(playerid, 0);
+        TogglePlayerControllable(playerid, 0);
+        return 1;
+    }
+
+    // Reset dan berikan money sesuai database (untuk sync)
+    ResetPlayerMoney(playerid);
+    GivePlayerMoney(playerid, pMoney[playerid]);
+
+    UpdateMoneyHUD(playerid);
+    return 1;
+}
+
+public OnPlayerText(playerid, text[])
+{
+    if(!pLogged{playerid})
+    {
+        SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+        return 0;
+    }
+
+    new showname[24];
+    format(showname, sizeof(showname), "%s", pCharName[playerid][pSelectedChar[playerid]]);
+    ReplaceUnderscore(showname);
+
+    new string[144];
+    new Float:x, Float:y, Float:z;
+    GetPlayerPos(playerid, x, y, z);
+
+    if(text[0] == '/' && text[1] == 's' && (text[2] == ' ' || text[2] == '\0'))
+    {
+        format(string, sizeof(string), "{FFFF00}%s shouts: {FFFFFF}%s", showname, text[3]);
+        for(new i = 0, j = GetPlayerPoolSize(); i <= j; i++)
+            if(IsPlayerConnected(i) && IsPlayerInRangeOfPoint(i, 40.0, x, y, z))
+                SendClientMessage(i, -1, string);
+    }
+    else
+    {
+        format(string, sizeof(string), "{AFAFAF}%s says: {FFFFFF}%s", showname, text);
+        for(new i = 0, j = GetPlayerPoolSize(); i <= j; i++)
+            if(IsPlayerConnected(i) && IsPlayerInRangeOfPoint(i, 20.0, x, y, z))
+                SendClientMessage(i, -1, string);
+    }
+    return 0;
+}
+
+public OnPlayerCommandText(playerid, cmdtext[]) {
+    if(!pLogged{playerid}) { SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!"); return 1; }
+    return 0;
+}
+
+CMD:car(playerid, params[])
+{
+    if(!pLogged{playerid}) return 0;
+    new rand = random(sizeof(RandomCars));
+    new Float:x, Float:y, Float:z, Float:a;
+    GetPlayerPos(playerid, x, y, z);
+    GetPlayerFacingAngle(playerid, a);
+    new veh = CreateVehicle(RandomCars[rand], x+3, y, z+1, a+90, -1, -1, 60);
+    PutPlayerInVehicle(playerid, veh, 0);
+    SendClientMessage(playerid, COLOR_YELLOW, "Mobil random telah dibuat!");
+    return 1;
+}
+
+CMD:jetpack(playerid, params[])
+{
+    if(!pLogged{playerid}) return 0;
+    if(IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, COLOR_RED, "Keluar dari kendaraan dulu!");
+    SetPlayerSpecialAction(playerid, SPECIAL_ACTION_USEJETPACK);
+    SendClientMessage(playerid, COLOR_YELLOW, "Jetpack diberikan!");
+    return 1;
+}
+
+CMD:death(playerid, params[])
+{
+    if(!pLogged{playerid}) return 0;
+    if(IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, COLOR_RED, "Keluar dari kendaraan dulu!");
+    SetPlayerHealth(playerid, 0.0);
+    SendClientMessage(playerid, COLOR_GREEN, "Kamu telah bunuh diri.");
+    return 1;
+}
+
+public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ)
+{
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Login dulu!");
+    
+    tpX[playerid] = fX;
+    tpY[playerid] = fY;
+    tpZ[playerid] = fZ;
+
+    ShowPlayerDialog(playerid, DIALOG_TELEPORT, DIALOG_STYLE_MSGBOX, "Teleport", 
+        "Yakin ingin teleport ke lokasi di peta?", "Ya", "Tidak");
+    return 1;
+}
+
+forward OnCharacterNameCheck(playerid);
+public OnCharacterNameCheck(playerid)
+{
+    if(cache_num_rows() > 0)
+    {
+        // Nama sudah dipakai orang lain
+        ShowPlayerDialog(playerid, DIALOG_CHARCREATE, DIALOG_STYLE_INPUT, "Nama Sudah Dipakai",
+            "{FF0000}Error: Nama karakter sudah digunakan oleh player lain!\n\
+            Silakan gunakan nama lain.\n\n\
+            Masukkan Nama Karakter (Format: Firstname_Lastname)\n\
+            Contoh: Michael_Smith",
+            "Buat", "Kembali");
+    }
+    else
+    {
+        // Nama tersedia → lanjut ke proses pembuatan karakter
+        format(tempCharName[playerid], 24, "%s", tempProposedName[playerid]);
+        ShowPlayerDialog(playerid, DIALOG_GENDER, DIALOG_STYLE_LIST, "Gender", "1. Male/Laki-Laki\n2. Female/Perempuan", "Pilih", "Batal");
+    }
+    return 1;
+}
+
+
+CMD:pay(playerid, params[])
+{
+if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+
+new targetid, amount;
+if(sscanf(params, "ui", targetid, amount)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /pay [playerid/nama] [jumlah uang]");
+
+if(targetid == playerid) return SendClientMessage(playerid, COLOR_RED, "Tidak bisa kirim uang ke diri sendiri!");
+if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+
+new Float:x, Float:y, Float:z;
+GetPlayerPos(playerid, x, y, z);
+if(!IsPlayerInRangeOfPoint(targetid, 5.0, x, y, z)) return SendClientMessage(playerid, COLOR_RED, "Player tersebut terlalu jauh!");
+
+if(amount <= 0) return SendClientMessage(playerid, COLOR_RED, "Jumlah uang harus lebih dari 0!");
+if(pMoney[playerid] < amount) return SendClientMessage(playerid, COLOR_RED, "Uangmu tidak cukup!");
+
+pMoney[playerid] -= amount;
+pMoney[targetid] += amount;
+
+UpdateMoneyHUD(playerid);
+UpdateMoneyHUD(targetid);
+
+new sendername[24], receivername[24];
+GetPlayerName(playerid, sendername, sizeof(sendername));
+GetPlayerName(targetid, receivername, sizeof(receivername));
+ReplaceUnderscore(sendername);
+ReplaceUnderscore(receivername);
+
+new msg[128];
+format(msg, sizeof(msg), "Kamu telah mengirim $%d ke %s.", amount, receivername);
+SendClientMessage(playerid, COLOR_GREEN, msg);
+
+format(msg, sizeof(msg), "%s telah mengirim $%d kepadamu.", sendername, amount);
+SendClientMessage(targetid, COLOR_GREEN, msg);
+
+return 1;
+}
+
+// ADMIN CMD
+
+CMD:ban(playerid, params[])
+{
+    if(pAdmin[playerid] < 2) return SendClientMessage(playerid, COLOR_WHITE, "[SERVER] You do not have access to this command!");
+    new targetid, reason[64];
+    if(sscanf(params, "us[64]", targetid, reason)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /ban [playerid/nama] [alasan]");
+    if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+    
+    new query[128];
+    new tname[MAX_PLAYER_NAME];
+    GetPlayerName(targetid, tname, sizeof(tname));
+    mysql_format(sqldb, query, sizeof(query), "UPDATE users SET banned = 1 WHERE name = '%e'", tname);
+    mysql_tquery(sqldb, query);
+    
+    new msg[128];
+    format(msg, sizeof(msg), "Admin %s telah ban %s. Alasan: %s", pAccountName[playerid], tname, reason);
+    SendClientMessageToAll(COLOR_RED, msg);
+    SetTimerEx("DelayedKick", 1000, false, "i", targetid);
+    return 1;
+}
+
+CMD:slap(playerid, params[])
+{
+    if(pAdmin[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "Hanya admin level 1+ yang bisa gunakan command ini!");
+    new targetid;
+    if(sscanf(params, "u", targetid)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /slap [playerid/nama]");
+    if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+    
+    new Float:x, Float:y, Float:z;
+    GetPlayerPos(targetid, x, y, z);
+    SetPlayerPos(targetid, x, y, z + 5.0);
+    PlayerPlaySound(targetid, 1190, 0.0, 0.0, 0.0);
+    SendClientMessage(targetid, COLOR_RED, "Kamu telah di-slap oleh admin!");
+    return 1;
+}
+
+CMD:goto(playerid, params[])
+{
+    if(pAdmin[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "Hanya admin level 1+ yang bisa gunakan command ini!");
+    new targetid;
+    if(sscanf(params, "u", targetid)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /goto [playerid/nama]");
+    if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+    
+    new Float:x, Float:y, Float:z;
+    GetPlayerPos(targetid, x, y, z);
+    SetPlayerPos(playerid, x + 2.0, y, z);
+    SendClientMessage(playerid, COLOR_GREEN, "Teleport berhasil!");
+    return 1;
+}
+
+CMD:gethere(playerid, params[])
+{
+    if(pAdmin[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "Hanya admin level 1+ yang bisa gunakan command ini!");
+    new targetid;
+    if(sscanf(params, "u", targetid)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /gethere [playerid/nama]");
+    if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+    
+    new Float:x, Float:y, Float:z;
+    GetPlayerPos(playerid, x, y, z);
+    SetPlayerPos(targetid, x + 2.0, y, z);
+    SendClientMessage(playerid, COLOR_GREEN, "Player berhasil di-teleport ke posisimu!");
+    SendClientMessage(targetid, COLOR_YELLOW, "Kamu telah di-teleport oleh admin.");
+    return 1;
+}
+
+// Command adminduty (tanpa password)
+CMD:adminduty(playerid, params[])
+{
+    if(pAdminLevel[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "Kamu bukan admin!");
+
+    if(pAdminDuty[playerid])
+    {
+        pAdminDuty[playerid] = false;
+        SetPlayerColor(playerid, COLOR_WHITE);
+        SetPlayerName(playerid, pCharName[playerid][pSelectedChar[playerid]]);
+        SendClientMessage(playerid, COLOR_YELLOW, "Admin duty: OFF");
+    }
+    else
+    {
+        pAdminDuty[playerid] = true;
+        SetPlayerColor(playerid, COLOR_RED);
+        SetPlayerName(playerid, pAccountName[playerid]);
+        SendClientMessage(playerid, COLOR_GREEN, "Admin duty: ON — Nama jadi UCP + warna merah");
+    }
+    return 1;
+}
+
+// Contoh command admin (lakukan sama untuk kick, ban, slap, goto, gethere, setadmin)
+CMD:kick(playerid, params[])
+{
+    if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
+        return SendClientMessage(playerid, COLOR_RED, "Hanya admin yang sedang duty!");
+
+    new targetid, reason[64];
+    if(sscanf(params, "us[64]", targetid, reason))
+        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /kick [playerid/nama] [alasan]");
+
+    if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+
+    new msg[144], adminname[MAX_PLAYER_NAME], targetname[MAX_PLAYER_NAME];
+    GetPlayerName(playerid, adminname, sizeof(adminname));
+    GetPlayerName(targetid, targetname, sizeof(targetname));
+    ReplaceUnderscore(adminname);
+    ReplaceUnderscore(targetname);
+
+    format(msg, sizeof(msg), "Admin %s telah kick %s. Alasan: %s", adminname, targetname, reason);
+    SendClientMessageToAll(COLOR_RED, msg);
+
+    Kick(targetid);
+    return 1;
+}
+
+// /setadmin (owner only)
+CMD:setadmin(playerid, params[])
+{
+    if(pAdminLevel[playerid] < 3 || !pAdminDuty[playerid])
+        return SendClientMessage(playerid, COLOR_RED, "Hanya owner yang sedang duty!");
+
+    new targetid, level;
+    if(sscanf(params, "ui", targetid, level))
+        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /setadmin [playerid] [level 0-3]");
+
+    if(level < 0 || level > 3) return SendClientMessage(playerid, COLOR_RED, "Level 0-3 saja!");
+
+    new tname[MAX_PLAYER_NAME], query[256];
+    GetPlayerName(targetid, tname, sizeof(tname));
+
+    if(level == 0)
+        mysql_format(sqldb, query, sizeof(query), "DELETE FROM admins WHERE name = '%e'", tname);
+    else
+        mysql_format(sqldb, query, sizeof(query), "INSERT INTO admins (name, level) VALUES ('%e', %d) ON DUPLICATE KEY UPDATE level = %d", tname, level, level);
+
+    mysql_tquery(sqldb, query);
+
+    pAdminLevel[targetid] = level;
+    SendClientMessage(playerid, COLOR_GREEN, "Admin level %s berhasil diubah menjadi %d!", tname, level);
+    format(query, sizeof(query), "Kamu sekarang menjadi admin level %d!", level);
+    if(level > 0) SendClientMessage(targetid, COLOR_YELLOW, query);
+    else SendClientMessage(targetid, COLOR_RED, "Admin levelmu telah dicabut!");
+    return 1;
+}
