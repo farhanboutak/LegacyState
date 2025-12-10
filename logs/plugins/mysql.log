@@ -294,52 +294,13 @@
 [00:30:08] [WARNING] mysql_connect: no password specified
 [12:11:10] [WARNING] mysql_connect: no password specified
 [12:19:54] [WARNING] mysql_connect: no password specified
-[00:41:45] [WARNING] mysql_connect: no password specified
-[00:41:50] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[00:41:54] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[00:41:58] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[00:42:02] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[00:42:32] [WARNING] mysql_connect: no password specified
-[00:48:57] [WARNING] mysql_connect: no password specified
-[00:48:57] [WARNING] duplicate connection detected: handle id 1 already exists with host = 'localhost', username = 'root' and database = 'samp'
-[00:54:02] [WARNING] mysql_connect: no password specified
-[00:55:29] [WARNING] mysql_connect: no password specified
-[00:58:54] [WARNING] mysql_connect: no password specified
-[00:58:55] [WARNING] mysql_connect: no password specified
-[01:01:36] [WARNING] mysql_connect: no password specified
-[01:09:12] [WARNING] mysql_connect: no password specified
-[06:43:00] [WARNING] mysql_connect: no password specified
-[06:43:04] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[06:43:08] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[06:43:12] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[06:43:16] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[06:43:19] [ERROR] mysql_format: can't escape string 'farhanboutak'
-[06:43:30] [ERROR] mysql_format: can't escape string 'mamarfarhan'
-[06:44:50] [WARNING] mysql_connect: no password specified
-[06:44:50] [WARNING] duplicate connection detected: handle id 1 already exists with host = 'localhost', username = 'root' and database = 'samp'
-[06:44:52] [ERROR] mysql_format: can't escape string 'mamarfarhan'
-[06:47:02] [WARNING] mysql_connect: no password specified
-[06:47:06] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[06:47:10] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[06:47:14] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[06:47:18] [ERROR] CConnection::CConnection - establishing connection to MySQL database failed: #2002 'Can't connect to MySQL server on 'localhost' (10061)'
-[07:03:29] [WARNING] mysql_connect: no password specified
-[07:19:17] [WARNING] mysql_connect: no password specified
-[07:30:10] [WARNING] mysql_connect: no password specified
-[07:31:35] [WARNING] mysql_connect: no password specified
-[07:33:00] [WARNING] mysql_connect: no password specified
-[07:46:30] [WARNING] mysql_connect: no password specified
-[07:50:04] [WARNING] mysql_connect: no password specified
-[07:57:40] [WARNING] mysql_connect: no password specified
-[08:01:38] [WARNING] mysql_connect: no password specified
-[08:01:38] [WARNING] mysql_connect: no password specified
-[08:03:57] [WARNING] mysql_connect: no password specified
-[08:12:13] [WARNING] mysql_connect: no password specified
-[12:09:46] [WARNING] mysql_connect: no password specified
-[12:20:12] [WARNING] mysql_connect: no password specified
-[12:22:35] [WARNING] mysql_connect: no password specified
-[12:22:35] [WARNING] mysql_connect: no password specified
-[13:33:07] [WARNING] mysql_connect: no password specified
-[13:36:00] [WARNING] mysql_connect: no password specified
-[13:45:47] [WARNING] mysql_connect: no password specified
-[14:25:11] [WARNING] mysql_connect: no password specified
+[21:36:41] [WARNING] mysql_connect: no password specified
+[21:42:35] [WARNING] mysql_connect: no password specified
+[21:44:06] [WARNING] mysql_connect: no password specified
+[21:45:42] [WARNING] mysql_connect: no password specified
+[21:47:47] [WARNING] mysql_connect: no password specified
+[21:47:47] [WARNING] duplicate connection detected: handle id 1 already exists with host = 'localhost', username = 'root' and database = 'samp'
+[22:04:48] [WARNING] mysql_connect: no password specified
+[22:04:48] [WARNING] duplicate connection detected: handle id 1 already exists with host = 'localhost', username = 'root' and database = 'samp'
+[22:06:42] [WARNING] mysql_connect: no password specified
+[22:06:42] [WARNING] duplicate connection detected: handle id 1 already exists with host = 'localhost', username = 'root' and database = 'samp'

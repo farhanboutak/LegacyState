@@ -355,7 +355,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(listitem == 0) // Mainkan
         {
             new query[128];
-            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a, interior, vw FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
+            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
             mysql_tquery(sqldb, query, "OnCharacterSelected", "i", playerid);
         }
         else if(listitem == 1) // Hapus
@@ -980,7 +980,7 @@ return 1;
 
 CMD:ban(playerid, params[])
 {
-    if(pAdmin[playerid] < 2) return SendClientMessage(playerid, COLOR_WHITE, "[SERVER] You do not have access to this command!");
+    if(pAdmin[playerid] < 2) return SendClientMessage(playerid, COLOR_RED, "Hanya admin level 2+ yang bisa gunakan command ini!");
     new targetid, reason[64];
     if(sscanf(params, "us[64]", targetid, reason)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /ban [playerid/nama] [alasan]");
     if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");

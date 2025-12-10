@@ -530,7 +530,7 @@ dcmd_object(playerid, params[])
 		}
 		else
 		{
-		    SendClientMessage( playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Invalid modeid." );
+		    SendClientMessage( playerid, COLOR_RED, "[ERROR]: Invalid modeid." );
 
 		    return 1;
 		}
@@ -542,7 +542,7 @@ dcmd_object(playerid, params[])
 
 		if ( !IsValidObject( objectid ) )
 		{
-			SendClientMessage( playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Enter a valid objectid." );
+			SendClientMessage( playerid, COLOR_RED, "[ERROR]: Enter a valid objectid." );
 
 			return 1;
 		}
@@ -632,7 +632,7 @@ dcmd_osel(playerid, params[])
 
 	if ( gPlayerStatus[ playerid ] != 0 )
 	{
-		format( cString, 128, "[ERROR] You are already using \"%s\".", aSelNames[ gPlayerStatus[ playerid ] - 1 ] );
+		format( cString, 128, "[ERROR]: You are already using \"%s\".", aSelNames[ gPlayerStatus[ playerid ] - 1 ] );
 		SendClientMessage(playerid, COLOR_RED, cString);
 
 		return 1;

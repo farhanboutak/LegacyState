@@ -54,7 +54,7 @@ new ReportPlayer[MAX_REPORTS];
 new ReportTime[MAX_REPORTS];
 new ReportCount = 0;
 new LastReportTime[MAX_PLAYERS];
-new TimerPosisi[MAX_PLAYERS char]; // hemat memori
+
 
 new tempProposedName[MAX_PLAYERS][24]; // untuk menyimpan nama yang sedang dicek
 
@@ -80,7 +80,6 @@ new tempSkinIndex[MAX_PLAYERS];
 new tempArrivalIndex[MAX_PLAYERS];
 new tempSkin[MAX_PLAYERS];
 new bool:isCreating[MAX_PLAYERS];
-
 
 // Ganti variabel lama tpX/tpY/tpZ jadi ini (lebih aman & jelas)
 new Float:g_LastMapClick[3][MAX_PLAYERS]; // [0]=X, [1]=Y, [2]=Z
@@ -121,6 +120,20 @@ stock ReplaceUnderscore(string[])
     }
 }
 
+stock LogAdminAction(adminid, action[])
+{
+    new log[256], adminname[MAX_PLAYER_NAME], year, month, day, hour, minute, second;
+    GetPlayerName(adminid, adminname, sizeof(adminname));
+    getdate(year, month, day);
+    gettime(hour, minute, second);
+    
+    format(log, sizeof(log), "[%04d-%02d-%02d %02d:%02d:%02d] %s: %s\r\n",
+        year, month, day, hour, minute, second, adminname, action);
+        
+    new File:f = fopen("scriptfiles/admin_logs.txt", io_append);
+    if(f) { fwrite(f, log); fclose(f); }
+}
+
 stock GetWeekDay(timestamp) {
     return ((timestamp / 86400) % 7 + 4) % 7; // 0=Sun, 1=Mon, ..., 6=Sat
 }
@@ -132,21 +145,6 @@ stock SetPlayerMoney(playerid, money)
     ResetPlayerMoney(playerid);
     GivePlayerMoney(playerid, money);
 }
-
-enum pInfo
-{
-    // ... data lain yang sudah ada
-    Float:pPosX,
-    Float:pPosY,
-    Float:pPosZ,
-    Float:pPosA,
-    pInterior,
-    pWorld
-};
-
-
-new PlayerInfo[MAX_PLAYERS][pInfo];
-
 
 main() {
     print("\n==================================");
@@ -163,17 +161,6 @@ new pUCPName[MAX_PLAYERS][MAX_PLAYER_NAME]; // Simpan UCP permanen
 
 new pSpecTarget[MAX_PLAYERS] = {-1, ...}; // Siapa yang lagi di-spectate
 new bool:pSpectating[MAX_PLAYERS];
-new Timer:PositionTimer[MAX_PLAYERS];
-
-forward AutoSaveAllPositions();
-public AutoSaveAllPositions()
-{
-    foreach(new i : Player)
-    {
-        SavePlayerPosition(i);
-    }
-    return 1;
-}
 
 public OnGameModeInit()
 {
@@ -187,8 +174,8 @@ public OnGameModeInit()
     mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS users (name VARCHAR(24) PRIMARY KEY, password VARCHAR(129))");
     mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS characters (id INT AUTO_INCREMENT PRIMARY KEY, owner VARCHAR(24), charname VARCHAR(24), skin INT, money INT, lastlogin INT)");
 
-    // Create codes table if not exist
-    mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS codes (code VARCHAR(32) PRIMARY KEY, reward INT DEFAULT 0, used TINYINT DEFAULT 0)");
+    // Create premium_codes table if not exist
+mysql_tquery(sqldb, "CREATE TABLE IF NOT EXISTS premium_codes (code VARCHAR(32) PRIMARY KEY, reward INT DEFAULT 0, used TINYINT DEFAULT 0)");
     // Add birthdate column if not exists
     mysql_tquery(sqldb, "ALTER TABLE characters ADD COLUMN IF NOT EXISTS birthdate VARCHAR(10) NOT NULL DEFAULT ''");
 
@@ -220,8 +207,6 @@ public OnGameModeInit()
     TextDrawColor(UI[2], -1); TextDrawSetOutline(UI[2], 1); TextDrawSetProportional(UI[2], 1);
 
     SetTimer("PayDay", 600000, true);
-
-    SetTimer("AutoSaveAllPositions", 60000, true); // Save setiap 1 menit
     
     return 1;
 }
@@ -289,7 +274,7 @@ stock ContinuePlayerConnect(playerid, const name[])
         {
             if(!strcmp(pAccountName[playerid], pAccountName[i], true))
             {
-                SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Akun ini sedang digunakan oleh pemain lain. Silakan tunggu atau gunakan akun lain.");
+                SendClientMessage(playerid, COLOR_RED, "[SERVER] Akun ini sedang digunakan oleh pemain lain. Silakan tunggu atau gunakan akun lain.");
                 SetTimerEx("DelayedKick", 1000, false, "i", playerid);
                 return 1;
             }
@@ -347,7 +332,7 @@ public OnFixGMXName(playerid)
         SetPlayerName(playerid, ucp_name);
 
         SendClientMessage(playerid, 0xFF6347FF, "[ANTI-CHEAT] Nama kamu telah dikembalikan ke UCP asli setelah restart server.");
-        SendClientMessage(playerid, -1, "{ADD8E6}[SERVER] {FFFFFF}Silahkan login dengan password UCP kamu.");
+        SendClientMessage(playerid, -1, "{33CCFF}[SERVER]{FFFFFF} Silahkan login dengan password UCP kamu.");
 
         // Lanjutkan proses login normal dengan nama UCP yang benar
         ContinuePlayerConnect(playerid, ucp_name);
@@ -355,7 +340,7 @@ public OnFixGMXName(playerid)
     else
     {
         // Nama karakter tidak ditemukan di database → kemungkinan cheat
-        SendClientMessage(playerid, -1, "{ADD8E6}[SERVER] {FFFFFF}Nama tidak valid! Gunakan UCP untuk login.");
+        SendClientMessage(playerid, COLOR_RED, "[SERVER] Nama tidak valid! Gunakan nama UCP asli di launcher.");
         SetTimerEx("DelayedKick", 1000, false, "i", playerid);
     }
     return 1;
@@ -444,10 +429,7 @@ public OnPlayerDisconnect(playerid, reason)
     }
     // =======================================
 
-// 5. Hentikan timer saat disconnect (di public OnPlayerDisconnect, sebelum reset variabel)
-    KillTimer(TimerPosisi{playerid}); // kalau mau lebih aman, simpan timer ID
-// atau cara paling gampang (karena kita pakai SetTimerEx langsung):
-// cukup biarkan, akan otomatis mati saat player disconnect 
+    // ... kode OnPlayerDisconnect kamu yang lain (reset variabel, dll) tetap di sini
 
     return 1;
 }
@@ -614,7 +596,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         // Query case-insensitive + aman
         new query[256];
         mysql_format(sqldb, query, sizeof(query), 
-            "SELECT reward, used FROM codes WHERE LOWER(code) = LOWER('%e') LIMIT 1", inputtext);
+            "SELECT reward, used FROM premium_codes WHERE LOWER(code) = LOWER('%e') LIMIT 1", inputtext);
         mysql_tquery(sqldb, query, "OnRedeemKode", "is", playerid, inputtext);
 
         return 1;
@@ -634,7 +616,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         mysql_format(sqldb, query, sizeof(query), "INSERT INTO users (name, password) VALUES ('%e', '%s')", name, hash);
         mysql_tquery(sqldb, query);
 
-        SendClientMessage(playerid, COLOR_WHITE, "Registrasi berhasil! Silakan login.");
+        SendClientMessage(playerid, COLOR_GREEN, "Registrasi berhasil! Silakan login.");
         ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login", "Masukkan password:", "Login", "Keluar");
         return 1;
     }
@@ -688,7 +670,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(listitem == 0)
         {
             new query[128];
-            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a, interior, vw FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
+            mysql_format(sqldb, query, sizeof(query), "SELECT money, skin, pos_x, pos_y, pos_z, pos_a FROM characters WHERE id = %d", pCharID[playerid][pSelectedChar[playerid]]);
             mysql_tquery(sqldb, query, "OnCharacterSelected", "i", playerid);
         }
         else if(listitem == 1)
@@ -777,10 +759,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         TogglePlayerSpectating(playerid, 0);
 
         SendClientMessage(playerid, -1, "");
-        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Gunakan panah kiri atau kanan untuk ganti penampilan");
-        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Tekan {FFFF00}SPAWN {FFFFFF}jika sudah yakin.");
-
-
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Gunakan panah kiri/kanan untuk ganti penampilan");
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Tekan {FFFF00}SPAWN {FFFFFF}jika sudah yakin dengan penampilan ini");
 
         return 1;
     }
@@ -820,7 +800,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
         new query[256];
         mysql_format(sqldb, query, sizeof(query),
-        "INSERT INTO codes (code, reward, used) VALUES ('%e', %d, 0) \
+        "INSERT INTO premium_codes (code, reward, used) VALUES ('%e', %d, 0) \
          ON DUPLICATE KEY UPDATE reward = %d, used = 0",
         escaped_code, reward, reward);
         mysql_tquery(sqldb, query);
@@ -851,7 +831,7 @@ format(str, sizeof(str), "[ADMIN] %s telah membuat kode premium baru: {FFFF00}%s
 
     new query[200];
     mysql_format(sqldb, query, sizeof(query),
-        "SELECT reward FROM codes WHERE LOWER(code) = LOWER('%e') LIMIT 1", inputtext);
+        "SELECT reward FROM premium_codes WHERE LOWER(code) = LOWER('%e') LIMIT 1", inputtext);
     mysql_tquery(sqldb, query, "OnRedeemKode", "is", playerid, inputtext);
     return 1;
 }
@@ -934,38 +914,12 @@ public OnCharactersLoaded(playerid)
     ShowPlayerDialog(playerid, DIALOG_CHARLIST, DIALOG_STYLE_LIST, "{FFFFFF}=== PILIH KARAKTER ===", string, "Pilih", "Keluar");
 }
 
-stock UpdatePlayerPosition(playerid)
-{
-    if(!IsPlayerConnected(playerid) || !pLogged{playerid} || pSelectedCharID[playerid][pSelectedChar[playerid]] == 0)
-        return 0;
-
-    new Float:x, Float:y, Float:z, Float:a;
-    GetPlayerPos(playerid, x, y, z);
-    GetPlayerFacingAngle(playerid, a);
-
-    // Query super ringan, cuma update posisi + interior + vw
-    new query[256];
-    mysql_format(sqldb, query, sizeof(query),
-        "UPDATE `characters` SET \
-        `pos_x` = %.4f, `pos_y` = %.4f, `pos_z` = %.4f, `pos_a` = %.4f, \
-        `interior` = %d, `vw` = %d \
-        WHERE `id` = %d LIMIT 1",
-        x, y, z, a,
-        GetPlayerInterior(playerid),
-        GetPlayerVirtualWorld(playerid),
-        pCharID[playerid][pSelectedChar[playerid]]
-    );
-    mysql_tquery(sqldb, query); // Fire-and-forget (paling cepat)
-
-    return 1;
-}
-
 forward OnCharacterCreated(playerid);
 public OnCharacterCreated(playerid)
 {
     if(cache_insert_id())
     {
-        SendClientMessage(playerid, -1, "{ADD8E6}[SERVER] {FFFFFF}Karakter berhasil dibuat!");
+        SendClientMessage(playerid, COLOR_GREEN, "Karakter berhasil dibuat!");
         LoadPlayerCharacters(playerid);
     }
     return 1;
@@ -976,13 +930,11 @@ public OnCharacterSelected(playerid)
 {
     if(cache_num_rows() == 0) return LoadPlayerCharacters(playerid);
 
-    new money, skin, interior, vw;
+    new money, skin;
     new Float:posx, Float:posy, Float:posz, Float:posa;
 
     cache_get_value_name_int(0, "money", money);
     cache_get_value_name_int(0, "skin", skin);
-    cache_get_value_name_int(0, "interior", interior);
-    cache_get_value_name_int(0, "vw", vw);
     cache_get_value_name_float(0, "pos_x", posx);
     cache_get_value_name_float(0, "pos_y", posy);
     cache_get_value_name_float(0, "pos_z", posz);
@@ -1031,23 +983,6 @@ public OnCharacterSelected(playerid)
         SetPlayerColor(playerid, 0xFFFFFFFF); // Putih
     }
 
-// ... (kode pMoney[playerid] = money; dan update lastlogin tetap)
-
-// Spawn player (kode lama tetap)
-    SetSpawnInfo(playerid, 0, skin, posx, posy, posz, posa, 0, 0, 0, 0, 0, 0);
-    TogglePlayerSpectating(playerid, 0);
-    SpawnPlayer(playerid);
-    SetPlayerSkin(playerid, skin);
-
-    // 4. Mulai timer saat player spawn (di dalam public OnCharacterSelected, setelah SpawnPlayer(playerid);)
-    SetTimerEx("SavePlayerPositionTimer", 4000, true, "i", playerid); // 4 detik sekali
-
-// TAMBAHKAN INI SETELAH SetPlayerSkin:
-    SetPlayerInterior(playerid, interior);
-    SetPlayerVirtualWorld(playerid, vw);
-
-// ... (sisa kode selamat datang tetap)
-
     // Spawn player
     SetSpawnInfo(playerid, 0, skin, posx, posy, posz, posa, 0, 0, 0, 0, 0, 0);
     TogglePlayerSpectating(playerid, 0);
@@ -1062,30 +997,13 @@ public OnCharacterSelected(playerid)
     ReplaceUnderscore(showname);
 
     new msg[128];
-    format(msg, sizeof(msg), "{ADD8E6}[SERVER] {FFFFFF}Anda login sebagai {FF0000}%s", showname);
+    format(msg, sizeof(msg), "{33CCFF}[SERVER] {FFFFFF}Anda login sebagai {FFFFFF}%s", showname);
     SendClientMessage(playerid, -1, msg);
 
     if(pAdminDuty[playerid])
         SendClientMessage(playerid, COLOR_RED, "[ADMIN] ADMIN DUTY: ON | Gunakan command admin dengan bijak!");
 
-    SendClientMessage(playerid, -1, "{ADD8E6}[SERVER] {FFFFFF}Karakter berhasil dimuat. Selamat bermain di Legacy State Roleplay.");
-
-    return 1;
-}
-
-stock SavePlayerPosition(playerid)
-{
-    if(!pLogged{playerid} || pSelectedChar[playerid] == -1) return 0;
-
-    new Float:x, Float:y, Float:z, Float:a;
-    GetPlayerPos(playerid, x, y, z);
-    GetPlayerFacingAngle(playerid, a);
-
-    new query[512];
-    mysql_format(sqldb, query, sizeof(query),
-        "UPDATE `characters` SET `money` = %d, `pos_x` = %f, `pos_y` = %f, `pos_z` = %f, `pos_a` = %f, `interior` = %d, `vw` = %d WHERE `id` = %d",
-        pMoney[playerid], x, y, z, a, GetPlayerInterior(playerid), GetPlayerVirtualWorld(playerid), pCharID[playerid][pSelectedChar[playerid]]);
-    mysql_tquery(sqldb, query);
+        SendClientMessage(playerid, -1, "{33CCFF}[SERVER] {FFFFFF}Karakter berhasil dimuat! Selamat bermain di Legacy State Roleplay!");
 
     return 1;
 }
@@ -1112,8 +1030,7 @@ public OnPlayerLoginAttempt(playerid, inputpass[])
 
     if(!strcmp(hash, dbpass))
     {
-        SendClientMessage(playerid, -1, "{ADD8E6}[SERVER] {FFFFFF}Login berhasil! Memuat karakter...");
-
+        SendClientMessage(playerid, -1, "{33CCFF}[SERVER]{FFFFFF} Login berhasil! Memuat karakter...");
         pLoginAttempts[playerid] = 0;
         LoadPlayerCharacters(playerid);
 
@@ -1199,10 +1116,8 @@ public OnPlayerRequestSpawn(playerid)
         inArrivalClassSelection[playerid] = true;
 
         SendClientMessage(playerid, -1, "");
-        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Gunakan panah kiri atau kanan untuk ganti lokasi kedatangan.");
-        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Tekan {FFFF00}SPAWN {FFFFFF}jika sudah yakin.");
-
-
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Gunakan panah kiri/kanan untuk ganti lokasi kedatangan");
+        SendClientMessage(playerid, -1, "{00FF00}>>> {FFFFFF}Tekan {FFFF00}SPAWN {FFFFFF}jika sudah yakin");
 
         return 0; // tetap di class selection
     }
@@ -1220,7 +1135,7 @@ public OnPlayerRequestSpawn(playerid)
             ArrivalCoords[tempArrivalIndex[playerid]][2], ArrivalCoords[tempArrivalIndex[playerid]][3]);
         mysql_tquery(sqldb, query, "OnCharacterCreated", "i", playerid);
 
-        SendClientMessage(playerid, -1, "{ADD8E6}[SERVER] {FFFFFF}Karakter berhasil dibuat! Selamat datang di Legacy State Roleplay!");
+        SendClientMessage(playerid, COLOR_GREEN, "[SERVER]: Karakter berhasil dibuat! Selamat datang di Legacy State Roleplay!");
 
         // Reset state
         isCreating[playerid] = false;
@@ -1248,10 +1163,10 @@ public OnPlayerCommandPerformed(playerid, cmdtext[], success)
         if(pLogged{playerid})
         {
             new string[128];
-            format(string, sizeof(string), "{ADD8E6}[SERVER] {FFFFFF}Perintah {CCCCCC}%s {FFFFFF}tidak ditemukan.", cmdtext);
+            format(string, sizeof(string), "{33CCFF}[SERVER] {FFFFFF}Perintah \"{CCCCCC}%s{FFFFFF}\" tidak ditemukan.", cmdtext);
             SendClientMessage(playerid, -1, string);
         }
-        else SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
+        else SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
     }
     return 1;
 }
@@ -1284,7 +1199,7 @@ public OnPlayerText(playerid, text[])
         SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
         return 0;
     }
-      
+
     new string[145];
     new Float:x, Float:y, Float:z;
     GetPlayerPos(playerid, x, y, z);
@@ -1311,10 +1226,6 @@ public OnPlayerText(playerid, text[])
         return 0; // Blokir chat IC
     }
 
-    if(text[0] >= 'a' && text[0] <= 'z')
-    {
-        text[0] = text[0] - 32;
-    }
     // =============================================
     // PLAYER BIASA / ADMIN OFF DUTY → CHAT ROLEPLAY NORMAL
     // =============================================
@@ -1363,7 +1274,7 @@ public OnRedeemKode(playerid, inputkode[])
     mysql_escape_string(pUCPName[playerid], esc_ucp);
 
     mysql_format(sqldb, query, sizeof(query),
-        "SELECT id FROM code_redeemed WHERE code = '%e' AND ucp_name = '%e' LIMIT 1", esc_code, esc_ucp);
+        "SELECT id FROM premium_redeemed WHERE code = '%e' AND ucp_name = '%e' LIMIT 1", esc_code, esc_ucp);
     mysql_tquery(sqldb, query, "OnCheckRedeemed", "i", playerid);
     return 1;
 }
@@ -1386,7 +1297,7 @@ public OnCheckRedeemed(playerid)
     mysql_escape_string(pUCPName[playerid], esc_ucp);
 
     mysql_format(sqldb, query, sizeof(query),
-        "INSERT IGNORE INTO code_redeemed (code, ucp_name, redeemed_at) VALUES ('%e', '%e', UNIX_TIMESTAMP())",
+        "INSERT IGNORE INTO premium_redeemed (code, ucp_name, redeemed_at) VALUES ('%e', '%e', UNIX_TIMESTAMP())",
         esc_code, esc_ucp);
     mysql_tquery(sqldb, query, "OnRewardGiven", "i", playerid);
     return 1;
@@ -1489,22 +1400,22 @@ CMD:pay(playerid, params[])
 
     new targetid, amount;
     if(sscanf(params, "ui", targetid, amount)) 
-        return SendClientMessage(playerid, -1, "{964B00}[CMD] {FFFFFF}Gunakan: /pay [playerid/nama] [jumlah uang]");
+        return SendClientMessage(playerid, -1, "[CMD] Gunakan: /pay [playerid/nama] [jumlah uang]");
 
     if(targetid == playerid) 
-        return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Tidak bisa kirim uang ke diri sendiri!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Tidak bisa kirim uang ke diri sendiri!");
     if(!IsPlayerConnected(targetid)) 
-        return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Player tidak online!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Player tidak online!");
 
     new Float:x, Float:y, Float:z;
     GetPlayerPos(playerid, x, y, z);
     if(!IsPlayerInRangeOfPoint(targetid, 5.0, x, y, z)) 
-        return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Player tersebut terlalu jauh!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Player tersebut terlalu jauh!");
 
     if(amount <= 0) 
-        return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Jumlah uang harus lebih dari 0!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Jumlah uang harus lebih dari 0!");
     if(pMoney[playerid] < amount) 
-        return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Uangmu tidak cukup!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Uangmu tidak cukup!");
 
     // Kurangi & tambah uang di variabel
     pMoney[playerid] -= amount;
@@ -1535,7 +1446,7 @@ CMD:pay(playerid, params[])
 
 CMD:aduty(playerid, params[])
 {
-    if(pAdminLevel[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "Kamu bukan admin!");
+    if(pAdminLevel[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     pAdminDuty[playerid] = !pAdminDuty[playerid];
 
@@ -1558,7 +1469,7 @@ CMD:aduty(playerid, params[])
 
 CMD:adminduty(playerid, params[])
 {
-    if(pAdminLevel[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "Kamu bukan admin!");
+    if(pAdminLevel[playerid] < 1) return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     pAdminDuty[playerid] = !pAdminDuty[playerid];
 
@@ -1591,13 +1502,13 @@ stock KickPlayer(playerid, reason[128] = "No reason specified")
 CMD:kick(playerid, params[])
 {
     if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus admin dan on duty!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     new targetid, reason[64];
     if(sscanf(params, "us[64]", targetid, reason))
-        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /kick [playerid] [alasan]");
+        return SendClientMessage(playerid, -1, "[CMD] Gunakan: /kick [playerid] [alasan]");
 
-    if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+    if(!IsPlayerConnected(targetid)) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Player tidak online!");
 
     new adminname[MAX_PLAYER_NAME], targetname[MAX_PLAYER_NAME];
     GetPlayerName(playerid, adminname, sizeof(adminname));
@@ -1613,7 +1524,7 @@ CMD:kick(playerid, params[])
 
 CMD:setadmin(playerid, neuen, params[])
 {
-    if(pAdminLevel[playerid] < 5) return SendClientMessage(playerid, COLOR_RED, "Hanya Owner yang bisa pakai command ini!");
+    if(pAdminLevel[playerid] < 5) return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     new targetname[24], level;
     if(sscanf(params, "s[24]i", targetname, level)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /setadmin [ucp_name] [level 0-5]");
@@ -1645,7 +1556,7 @@ public UpdateSpectate(playerid)
 
     if(!IsPlayerConnected(targetid))
     {
-        SendClientMessage(playerid, COLOR_RED, "Player yang kamu spectate telah keluar dari server.");
+        SendClientMessage(playerid, COLOR_RED, "[INFO] Player yang kamu spectate telah keluar dari server.");
         
         // Matikan spectate secara manual (tanpa CMD)
         pSpectating[playerid] = false;
@@ -1676,17 +1587,17 @@ public UpdateSpectate(playerid)
 CMD:spec(playerid, params[])
 {
     if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus admin dan on duty!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     new targetid;
     if(sscanf(params, "u", targetid)) 
-        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /spec [playerid/nama]");
+        return SendClientMessage(playerid, COLOR_YELLOW, "[CMD] Gunakan: /spec [playerid/nama]");
 
     if(!IsPlayerConnected(targetid) || targetid == playerid) 
-        return SendClientMessage(playerid, COLOR_RED, "Player tidak valid!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Player tidak valid!");
 
     if(pSpectating[playerid]) 
-        return SendClientMessage(playerid, COLOR_RED, "Gunakan /specoff dulu!");
+        return SendClientMessage(playerid, COLOR_RED, "[CMD] Gunakan /specoff dulu!");
 
     // === INI BARIS PENTING YANG HARUS DITAMBAH ===
     TogglePlayerSpectating(playerid, 1); // <--- WAJIB! Biar masuk mode spectate
@@ -1703,7 +1614,7 @@ CMD:spec(playerid, params[])
 
     new name[24], msg[128];
     GetPlayerName(targetid, name, sizeof(name));
-    format(msg, sizeof(msg), "Kamu sekarang spectate %s (ID: %d). Gunakan /specoff untuk berhenti.", name, targetid);
+    format(msg, sizeof(msg), "[CMD] Kamu sekarang spectate %s (ID: %d). Gunakan /specoff untuk berhenti.", name, targetid);
     SendClientMessage(playerid, -1, msg);
     return 1;
 }
@@ -1711,7 +1622,7 @@ CMD:spec(playerid, params[])
 CMD:specoff(playerid, params[])
 {
     if(!pSpectating[playerid])
-        return SendClientMessage(playerid, COLOR_RED, "Kamu tidak sedang spectate!");
+        return SendClientMessage(playerid, COLOR_RED, "[CMD] Kamu tidak sedang spectate!");
 
     pSpectating[playerid] = false;
     pSpecTarget[playerid] = -1;
@@ -1721,14 +1632,14 @@ CMD:specoff(playerid, params[])
     TogglePlayerControllable(playerid, 1);
     SpawnPlayer(playerid);
 
-    SendClientMessage(playerid, COLOR_GREEN, "Spectate mode dimatikan.");
+    SendClientMessage(playerid, COLOR_GREEN, "[CMD] Spectate mode dimatikan.");
     return 1;
 }
 
 CMD:me(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
-    if(isnull(params)) return SendClientMessage(playerid, -1, "Gunakan: /me [aksi]");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
+    if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /me [aksi]");
 
     new name[24];
     format(name, sizeof(name), "%s", pCharName[playerid][pSelectedChar[playerid]]);
@@ -1743,8 +1654,8 @@ CMD:me(playerid, params[])
 
 CMD:do(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
-    if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] {FFFFFF}Gunakan: /do [aksi]");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
+    if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /do [aksi]");
 
     new name[24];
     format(name, sizeof(name), "%s", pCharName[playerid][pSelectedChar[playerid]]);
@@ -1760,10 +1671,10 @@ CMD:do(playerid, params[])
 CMD:stats(playerid, params[])
 {
     if(!pLogged{playerid})
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
 
     if(pSelectedChar[playerid] == -1)
-        return SendClientMessage(playerid, COLOR_RED, "Error: Karakter belum dipilih dengan benar.");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Karakter belum dipilih dengan benar.");
 
     new str[512];
     new charname[24];
@@ -1792,7 +1703,7 @@ public OnPlayerStats(playerid)
 {
     if(cache_num_rows() == 0)
     {
-        SendClientMessage(playerid, COLOR_RED, "Error: Data karakter tidak ditemukan!");
+        SendClientMessage(playerid, COLOR_RED, "[ERROR] Data karakter tidak ditemukan!");
         return 1;
     }
 
@@ -1846,8 +1757,8 @@ stock ProxDetector(Float:radius, playerid, const string[], color)
 
 CMD:b(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
-    if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] {FFFFFF}Gunakan: /b [pesan OOC]");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
+    if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /b [pesan OOC]");
 
     new name[24];
     format(name, sizeof(name), "%s", pCharName[playerid][pSelectedChar[playerid]]);
@@ -1862,7 +1773,7 @@ CMD:b(playerid, params[])
 
 CMD:o(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
     if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /o [pesan OOC global]");
 
     new name[24];
@@ -1877,7 +1788,7 @@ CMD:o(playerid, params[])
 
 CMD:ame(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
     if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /ame [aksi]");
 
     new name[24], str[128];
@@ -1910,7 +1821,7 @@ CMD:ado(playerid, params[])
 CMD:low(playerid, params[])
 {
     if(!pLogged{playerid}) return 0;
-    if(isnull(params)) return SendClientMessage(playerid, -1, "Gunakan: /low [teks pelan]");
+    if(isnull(params)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /low [teks pelan]");
 
     new name[24];
     format(name, sizeof(name), "%s", pCharName[playerid][pSelectedChar[playerid]]);
@@ -1926,12 +1837,12 @@ CMD:w(playerid, params[])
 {
     if(!pLogged{playerid}) return 0;
     new targetid;
-    if(sscanf(params, "u", targetid)) return SendClientMessage(playerid, -1, "Gunakan: /whisper [id/nama]");
+    if(sscanf(params, "u", targetid)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /whisper [id/nama]");
     if(!IsPlayerConnected(targetid) || !ProxDetectorCheck(playerid, targetid, 3.0))
-        return SendClientMessage(playerid, COLOR_RED, "Player terlalu jauh atau tidak online!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Player terlalu jauh atau tidak online!");
 
     new text[128], name[24], targetname[24];
-    if(sscanf(params, "us[128]", targetid, text)) return SendClientMessage(playerid, -1, "Gunakan: /whisper [id] [pesan]");
+    if(sscanf(params, "us[128]", targetid, text)) return SendClientMessage(playerid, -1, "[CMD] Gunakan: /whisper [id] [pesan]");
 
     format(name, sizeof(name), "%s", pCharName[playerid][pSelectedChar[playerid]]);
     ReplaceUnderscore(name);
@@ -1955,45 +1866,35 @@ CMD:w(playerid, params[])
 CMD:gethere(playerid, params[])
 {
     if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus admin dan on duty.");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     new targetid;
     if(sscanf(params, "u", targetid))
-        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /gethere [playerid atau nama]");
+        return SendClientMessage(playerid, COLOR_YELLOW, "[CMD] Gunakan: /gethere [playerid/nama]");
 
     if(!IsPlayerConnected(targetid))
-        return SendClientMessage(playerid, COLOR_RED, "Player tidak online.");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Player tidak online!");
 
-    new Float:x, Float:y, Float:z;
-    new interiorid = GetPlayerInterior(playerid);
-    new vwid = GetPlayerVirtualWorld(playerid);
-
+    new Float:x, Float:y, Float:z, interiorid = GetPlayerInterior(playerid), vwid = GetPlayerVirtualWorld(playerid);
     GetPlayerPos(playerid, x, y, z);
 
     SetPlayerInterior(targetid, interiorid);
     SetPlayerVirtualWorld(targetid, vwid);
     SetPlayerPos(targetid, x + 1.5, y, z);
 
-    new adminname[MAX_PLAYER_NAME];
-    new targetname[MAX_PLAYER_NAME];
-    new msg[128];
-
+    new adminname[MAX_PLAYER_NAME], targetname[MAX_PLAYER_NAME];
     GetPlayerName(playerid, adminname, sizeof(adminname));
     GetPlayerName(targetid, targetname, sizeof(targetname));
 
-    format(msg, sizeof msg, "Kamu telah di teleport oleh admin %s.", adminname);
-    SendClientMessage(targetid, 0xFF6347FF, msg);
-
-    format(msg, sizeof msg, "Kamu telah menarik %s ke posisimu.", targetname);
-    SendClientMessage(playerid, 0x00FF00FF, msg);
-
+    SendClientMessage(targetid, 0xFF6347FF, "[SERVER] Kamu telah di-teleport oleh admin %s.", adminname);
+    SendClientMessage(playerid, 0x00FF00FF, "[SERVER] Kamu telah menarik %s ke posisimu.", targetname);
     return 1;
 }
 
 CMD:savepos(playerid, params[])
 {
     if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus admin dan on duty!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     new Float:x, Float:y, Float:z, Float:a;
     GetPlayerPos(playerid, x, y, z);
@@ -2019,7 +1920,7 @@ CMD:savepos(playerid, params[])
 CMD:loadpos(playerid, params[])
 {
     if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus admin dan on duty!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     new filename[64], File:file, line[256];
     format(filename, sizeof(filename), "savedpositions/%s.txt", pUCPName[playerid]);
@@ -2052,10 +1953,10 @@ CMD:loadpos(playerid, params[])
 CMD:v(playerid, params[])
 {
     if(pAdminLevel[playerid] < 3 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_RED, "Minimal Admin Level 3!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Minimal Admin Level 3!");
 
     new modelid;
-    if(sscanf(params, "i", modelid)) return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /v [modelid]");
+    if(sscanf(params, "i", modelid)) return SendClientMessage(playerid, COLOR_YELLOW, "[CMD] Gunakan: /v [modelid]");
 
     if(modelid < 400 || modelid > 611) return SendClientMessage(playerid, COLOR_RED, "Model ID kendaraan: 400-611!");
 
@@ -2073,7 +1974,7 @@ CMD:rcrestart(playerid, params[])
 {
     // Hanya RCON Admin yang boleh pakai
     if(!IsPlayerAdmin(playerid))
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus login RCON terlebih dahulu! Ketik: /rcon login [password]");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     new ucp_name[MAX_PLAYER_NAME];
     GetPlayerName(playerid, ucp_name, sizeof(ucp_name)); // Pasti UCP karena admin duty pakai UCP
@@ -2110,15 +2011,13 @@ stock GetUCPName(playerid)
 CMD:tp(playerid, params[])
 {
     if(!pLogged{playerid})
-        return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Kamu harus login terlebih dahulu!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
-    if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_WHITE, "{FF0000}[ERROR] {FFFFFF}You do not have access to this command.");
-
+    if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid]) return SendClientMessage(playerid, COLOR_RED, "[ERROR] You do not have access to this command");
 
     // Cek apakah pernah klik map
     if(g_LastMapClick[0][playerid] == 0.0 && g_LastMapClick[1][playerid] == 0.0 && g_LastMapClick[2][playerid] == 0.0)
-        return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}Tidak ada lokasi teleport yang disimpan! Klik dulu di peta.");
+        return SendClientMessage(playerid, COLOR_RED, "Tidak ada lokasi teleport yang disimpan! Klik dulu di peta.");
 
     // Teleport player
     SetPlayerPos(playerid, 
@@ -2130,14 +2029,14 @@ CMD:tp(playerid, params[])
     SetPlayerInterior(playerid, 0);
     SetPlayerVirtualWorld(playerid, 0);
 
-    SendClientMessage(playerid, COLOR_GREEN, "Teleport berhasil ke lokasi yang dipilih di peta!");
+    SendClientMessage(playerid, COLOR_GREEN, "[TP] Teleport berhasil ke lokasi yang dipilih di peta!");
 
     return 1;
 }
 
 CMD:menu(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
 
     new string[512];
 
@@ -2156,7 +2055,7 @@ CMD:menu(playerid, params[])
 CMD:admin(playerid, params[])
 {
     if(!pLogged{playerid}) 
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
 
     new count = 0;
     new line[128];
@@ -2198,10 +2097,21 @@ CMD:admin(playerid, params[])
     return 1;
 }
 
+CMD:akun(playerid)
+{
+    if(!pLogged{playerid}) return 0;
+    
+    new str[128];
+    format(str, sizeof(str), "{FFD700}[AKUN] {FFFFFF}UCP: {00FF00}%s {FFFFFF}| Admin Level: {00FF00}%d", 
+        pUCPName[playerid], pAdminLevel[playerid]);
+    SendClientMessage(playerid, -1, str);
+    return 1;
+}
+
 CMD:admins(playerid, params[])
 {
     if(!pLogged{playerid}) 
-        return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
 
     new count = 0;
     new line[128];
@@ -2236,7 +2146,7 @@ CMD:admins(playerid, params[])
 
     if(count == 0)
     {
-        SendClientMessage(playerid, 0xFFFFFFFF, "{964B00}[CMD] {FFFFFF}Tidak ada admin yang sedang on duty saat ini.");
+        SendClientMessage(playerid, 0xFFFFFFFF, "   Tidak ada admin yang sedang on duty saat ini.");
     }
 
     SendClientMessage(playerid, 0xFFD700FF, "------------------------------------------------------------------------");
@@ -2247,7 +2157,7 @@ CMD:admins(playerid, params[])
 // Command /kode – HANYA ADMIN
 CMD:kode(playerid, params[])
 {
-    if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid]) return SendClientMessage(playerid, -1, "{FF0000FF}[ERROR] {FFFFFF}You do not have access to this command!");
+    if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid]) return SendClientMessage(playerid, COLOR_RED, "[ERROR]Hanya admin on duty yang bisa menggunakan command ini!");
 
     ShowPlayerDialog(playerid, DIALOG_SET_KODE, DIALOG_STYLE_INPUT, "{FFD700}Set Kode Premium Baru",
         "{FFFFFF}Masukkan kode premium baru (maks 32 karakter):\n\n{FFFF00}Contoh: LEGACYDEC2025", "Set", "Batal");
@@ -2256,16 +2166,16 @@ CMD:kode(playerid, params[])
 
 CMD:report(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
     
     if(gettime() - LastReportTime[playerid] < REPORT_COOLDOWN)
-        return SendClientMessage(playerid, COLOR_RED, "Tunggu beberapa detik sebelum report lagi!");
+        return SendClientMessage(playerid, COLOR_RED, "[REPORT] Tunggu beberapa detik sebelum report lagi!");
 
     if(isnull(params))
-        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /report [alasan laporan]");
+        return SendClientMessage(playerid, COLOR_YELLOW, "[CMD] Gunakan: /report [alasan laporan]");
 
     if(strlen(params) > 100)
-        return SendClientMessage(playerid, COLOR_RED, "Alasan terlalu panjang! Maksimal 100 karakter.");
+        return SendClientMessage(playerid, COLOR_RED, "[REPORT] Alasan terlalu panjang! Maksimal 100 karakter.");
 
     if(ReportCount >= MAX_REPORTS) ReportCount = 0; // loop
 
@@ -2294,16 +2204,16 @@ CMD:report(playerid, params[])
         }                                     
     }
 
-    SendClientMessage(playerid, 0x00FF00FF, "Report kamu telah dikirim ke admin yang sedang on duty. Terima kasih!");
+    SendClientMessage(playerid, 0x00FF00FF, "[REPORT] Report kamu telah dikirim ke admin yang sedang on duty. Terima kasih!");
     return 1;
 }
 
 CMD:ask(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
     
     if(isnull(params))
-        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /ask [pertanyaan]");
+        return SendClientMessage(playerid, COLOR_YELLOW, "[CMD] Gunakan: /ask [pertanyaan]");
 
     new pname[MAX_PLAYER_NAME], string[256];
     GetPlayerName(playerid, pname, sizeof(pname));
@@ -2318,13 +2228,13 @@ CMD:ask(playerid, params[])
         }
     }
 
-    SendClientMessage(playerid, 0x87CEEBFF, "Pertanyaan kamu telah dikirim ke admin. Tunggu jawaban ya!");
+    SendClientMessage(playerid, 0x87CEEBFF, "[ASK] Pertanyaan kamu telah dikirim ke admin. Tunggu jawaban ya!");
     return 1;
 }
 
 CMD:reports(playerid, params[])
 {
-    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "Kamu harus login terlebih dahulu!");
+    if(!pLogged{playerid}) return SendClientMessage(playerid, COLOR_RED, "[ERROR] Kamu harus login terlebih dahulu!");
 
     new string[1024], line[128], found = 0;
     new currentTime = gettime();
@@ -2352,7 +2262,7 @@ CMD:reports(playerid, params[])
 
     if(found == 0)
     {
-        SendClientMessage(playerid, 0xFFFFFFFF, "   Belum ada report saat ini.");
+        SendClientMessage(playerid, 0xFFFFFFFF, "[REPORTS] Belum ada report saat ini.");
     }
     else
     {
@@ -2368,17 +2278,17 @@ CMD:reports(playerid, params[])
 CMD:answer(playerid, params[])
 {
     if(pAdminLevel[playerid] < 1 || !pAdminDuty[playerid])
-        return SendClientMessage(playerid, COLOR_WHITE, "[ERROR] You do not have access to this command!");
+        return SendClientMessage(playerid, COLOR_RED, "[ANS] You do not have access to this command");
 
     new targetid, pesan[128];
     if(sscanf(params, "us[128]", targetid, pesan))
-        return SendClientMessage(playerid, COLOR_YELLOW, "Gunakan: /answer [playerid] [jawaban]");
+        return SendClientMessage(playerid, COLOR_YELLOW, "[CMD] Gunakan: /answer [playerid] [jawaban]");
 
     if(!IsPlayerConnected(targetid))
-        return SendClientMessage(playerid, COLOR_RED, "Player tidak online!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Player tidak online!");
 
     if(isnull(pesan))
-        return SendClientMessage(playerid, COLOR_RED, "Tulis jawaban terlebih dahulu!");
+        return SendClientMessage(playerid, COLOR_RED, "[ERROR] Tulis jawaban terlebih dahulu!");
 
     new adminname[MAX_PLAYER_NAME], playername[MAX_PLAYER_NAME];
     GetPlayerName(playerid, adminname, sizeof(adminname));
@@ -2388,14 +2298,12 @@ CMD:answer(playerid, params[])
 
     // Kirim ke player yang nanya
 
-    SendClientMessage(targetid, 0x00FFFFFF, "JAWABAN DARI ADMIN:");
-
-    format(pesan, sizeof(pesan), "{FFD700}%s {FFFFFF}(Admin): {87CEEB}%s", adminname, pesan);
+    format(pesan, sizeof(pesan), "[ASK] {FFD700}%s {FFFFFF}(Admin): {87CEEB}%s", adminname, pesan);
     SendClientMessage(targetid, -1, pesan);
 
 
     // Konfirmasi ke admin
-    format(pesan, sizeof(pesan), "Kamu telah menjawab pertanyaan {00FF00}%s (ID: %d)", playername, targetid);
+    format(pesan, sizeof(pesan), "[ANS] Kamu telah menjawab pertanyaan {00FF00}%s (ID: %d)", playername, targetid);
     SendClientMessage(playerid, 0x00FF00FF, pesan);
 
     // Broadcast ke semua admin on duty (opsional, biar tahu siapa yang dijawab)
@@ -2407,30 +2315,6 @@ CMD:answer(playerid, params[])
             SendClientMessage(i, 0x87CEEBFF, pesan);
         }
     }
-
-    return 1;
-}
-
-// 3. Buat fungsi save (taruh di bawah-bawah file, sebelum #endif)
-forward SavePlayerPositionTimer(playerid);
-public SavePlayerPositionTimer(playerid)
-{
-    if(!IsPlayerConnected(playerid) || !pLogged{playerid} || pSelectedChar[playerid] == -1)
-        return 0;
-
-    new Float:x, Float:y, Float:z, Float:a;
-    GetPlayerPos(playerid, x, y, z);
-    GetPlayerFacingAngle(playerid, a);
-
-    new query[300];
-    mysql_format(sqldb, query, sizeof(query),
-        "UPDATE `characters` SET pos_x=%.4f,pos_y=%.4f,pos_z=%.4f,pos_a=%.4f,interior=%d,vw=%d,money=%d WHERE id=%d LIMIT 1",
-        x, y, z, a,
-        GetPlayerInterior(playerid),
-        GetPlayerVirtualWorld(playerid),
-        pMoney[playerid],
-        pCharID[playerid][pSelectedChar[playerid]]);
-    mysql_tquery(sqldb, query);
 
     return 1;
 }
